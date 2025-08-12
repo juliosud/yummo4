@@ -34,7 +34,6 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTables } from "@/contexts/TableContext";
 
-
 interface Table {
   id: string;
   table_id: string;
@@ -68,31 +67,35 @@ const TableManagement = () => {
   // Terminal troubleshooting helper
   const getTerminalInfo = (table: Table) => {
     if (table.table_type !== "terminal") return null;
-    
+
     const sessionData = activeSessions[table.table_id];
     return {
       tableId: table.table_id,
       sessionActive: table.sessionActive,
       qrCodeUrl: sessionData?.menuUrl || "No active session",
-      lastActivity: sessionData ? "Active" : "Inactive"
+      lastActivity: sessionData ? "Active" : "Inactive",
     };
   };
 
   const addTable = async (tableType: "regular" | "terminal" = "regular") => {
     try {
       // Get existing table IDs to find the next available number
-      const existingTableIds = tables.map(t => t.table_id);
-      
+      const existingTableIds = tables.map((t) => t.table_id);
+
       // For terminals, find the next available terminal number
       let nextTableNumber: string;
       let nextName: string;
-      
+
       if (tableType === "terminal") {
         let terminalCount = 1;
-        while (existingTableIds.includes(`T-${terminalCount.toString().padStart(2, '0')}`)) {
+        while (
+          existingTableIds.includes(
+            `T-${terminalCount.toString().padStart(2, "0")}`,
+          )
+        ) {
           terminalCount++;
         }
-        nextTableNumber = `T-${terminalCount.toString().padStart(2, '0')}`;
+        nextTableNumber = `T-${terminalCount.toString().padStart(2, "0")}`;
         nextName = `Terminal ${terminalCount}`;
       } else {
         // For regular tables, find the next available number
@@ -181,7 +184,7 @@ const TableManagement = () => {
 
   const deleteTable = async (id: string) => {
     try {
-      const tableToDelete = tables.find(t => t.id === id);
+      const tableToDelete = tables.find((t) => t.id === id);
       if (!tableToDelete) return;
 
       // Check if Supabase is configured
@@ -196,7 +199,10 @@ const TableManagement = () => {
       }
 
       // If it's a terminal with an active session, end it first
-      if (tableToDelete.table_type === "terminal" && tableToDelete.sessionActive) {
+      if (
+        tableToDelete.table_type === "terminal" &&
+        tableToDelete.sessionActive
+      ) {
         await endSession(id);
       }
 
@@ -226,7 +232,7 @@ const TableManagement = () => {
         const basePath = import.meta.env.VITE_BASE_PATH || "";
         const terminalUrl = new URL(
           `${basePath ? `${basePath}` : ""}/term/${table.table_id}`,
-          baseUrl
+          baseUrl,
         ).toString();
 
         // Generate a QR for the static terminal URL
@@ -237,7 +243,12 @@ const TableManagement = () => {
         });
 
         // Update local state for display
-        const updatedTable = { ...table, qrCode: qrCodeDataUrl, menuUrl: terminalUrl, sessionActive: true };
+        const updatedTable = {
+          ...table,
+          qrCode: qrCodeDataUrl,
+          menuUrl: terminalUrl,
+          sessionActive: true,
+        };
         setSelectedTable(updatedTable);
         setShowQRDialog(true);
         return; // IMPORTANT: exit here for terminals (no per-scan session on the admin side)
@@ -437,25 +448,23 @@ const TableManagement = () => {
 
   return (
     <div className="bg-white">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h3 className="text-2xl font-bold">Table Management</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage your restaurant tables and their availability
-          </p>
+          <h3 className="text-xl sm:text-2xl font-bold">Table Management</h3>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
             onClick={() => addTable("regular")}
-            className="flex items-center gap-2"
+            variant="outline"
+            className="flex items-center gap-2 flex-1 sm:flex-none"
           >
-            <Plus className="h-4 w-4" />
+            <Users className="h-4 w-4" />
             Add Table
           </Button>
           <Button
             onClick={() => addTable("terminal")}
             variant="outline"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 flex-1 sm:flex-none"
           >
             <QrCode className="h-4 w-4" />
             Add Terminal
@@ -465,10 +474,10 @@ const TableManagement = () => {
 
       <div
         data-canvas="table-layout"
-        className="relative bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg"
-        style={{ height: "550px", width: "100%" }}
+        className="relative bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden"
+        style={{ height: "400px", width: "100%" }}
       >
-        <div className="absolute inset-2 text-xs text-gray-400 pointer-events-none">
+        <div className="absolute inset-2 text-xs text-gray-400 pointer-events-none hidden sm:block">
           Restaurant Floor Plan - Tables are automatically arranged
         </div>
         {tables.map((table) => (
@@ -484,7 +493,7 @@ const TableManagement = () => {
               className={cn(
                 "relative w-20 h-20 border-2 rounded-xl flex flex-col items-center justify-center transition-all shadow-md hover:scale-105",
                 getStatusColor(table.sessionActive, table.table_type),
-                table.table_type === "terminal" && "ring-2 ring-purple-200"
+                table.table_type === "terminal" && "ring-2 ring-purple-200",
               )}
             >
               <button
@@ -495,9 +504,13 @@ const TableManagement = () => {
               </button>
 
               {/* Table/Terminal representation */}
-              <div 
+              <div
                 className="w-12 h-6 bg-white/50 rounded-md border border-current mb-1 flex items-center justify-center"
-                title={table.table_type === "terminal" ? "Self-service terminal" : `${table.seats} seats`}
+                title={
+                  table.table_type === "terminal"
+                    ? "Self-service terminal"
+                    : `${table.seats} seats`
+                }
               >
                 {table.table_type === "terminal" ? (
                   <QrCode className="h-3 w-3" />
@@ -657,10 +670,7 @@ const Home = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { user, profile, signOut } = useAuth();
-  const {
-    tables,
-    refreshTables,
-  } = useTables();
+  const { tables, refreshTables } = useTables();
 
   // Handle logout with proper authentication
   const handleLogout = async () => {
@@ -890,9 +900,8 @@ const Home = () => {
             </div>
           )}
 
-                     {activeTab === "dashboard" && (
-             <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6 lg:h-full">
-
+          {activeTab === "dashboard" && (
+            <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6 lg:h-full">
               {/* Mobile Stats Grid */}
               <div className="lg:hidden">
                 <div className="grid grid-cols-2 gap-3 mb-4">
@@ -973,9 +982,8 @@ const Home = () => {
                 </div>
               </div>
 
-                             {/* Desktop Side Panel with Stats and Activity */}
-               <div className="hidden lg:block space-y-6">
-
+              {/* Desktop Side Panel with Stats and Activity */}
+              <div className="hidden lg:block space-y-6">
                 {/* Quick Stats */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white p-4 rounded-lg border shadow-sm">

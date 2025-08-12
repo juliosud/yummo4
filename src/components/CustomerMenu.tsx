@@ -612,14 +612,17 @@ const CustomerMenuContent = () => {
     <div className="bg-white min-h-screen w-full overflow-x-hidden">
       {/* Header */}
       <div className="bg-white sticky top-0 z-40 px-4 py-4 pt-safe-top">
-        {/* Table Number Indicator */}
-        {tableNumber && (
-          <div className="flex items-center justify-center mb-4">
-            <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white px-6 py-3 rounded-2xl text-sm font-semibold shadow-lg">
+        {/* Title and Table Number */}
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">Menu</h1>
+          </div>
+          {tableNumber && (
+            <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white px-4 py-2 rounded-2xl text-sm font-semibold shadow-lg">
               Table {tableNumber}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Category Tabs - Modern mobile design */}
         <Tabs

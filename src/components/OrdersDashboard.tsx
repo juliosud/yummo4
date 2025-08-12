@@ -38,7 +38,6 @@ const OrdersDashboard = ({ orders: propOrders }: { orders?: Order[] }) => {
     refreshOrders,
     loading,
   } = useAdminOrders();
-  
 
   const [activeTab, setActiveTab] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -165,39 +164,40 @@ const OrdersDashboard = ({ orders: propOrders }: { orders?: Order[] }) => {
   return (
     <div className="w-full h-full bg-background p-3 sm:p-4 lg:p-6">
       <div className="flex flex-col space-y-4 sm:space-y-6">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">
-            Orders Dashboard
-          </h1>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search orders..."
-                className="pl-8 w-full sm:w-[200px] lg:w-[250px] text-sm"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+        <div className="flex flex-col space-y-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">
+              Orders Dashboard
+            </h1>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search orders..."
+                  className="pl-8 w-full sm:w-[200px] lg:w-[250px] text-sm"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <Button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                size="sm"
+                variant="outline"
+                className="text-xs sm:text-sm"
+              >
+                <RefreshCw
+                  className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 ${isRefreshing ? "animate-spin" : ""}`}
+                />
+                <span className="hidden sm:inline">
+                  {isRefreshing ? "Refreshing..." : "Refresh"}
+                </span>
+                <span className="sm:hidden">↻</span>
+              </Button>
             </div>
-            <Button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              size="sm"
-              className="text-xs sm:text-sm"
-            >
-              <RefreshCw
-                className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 ${isRefreshing ? "animate-spin" : ""}`}
-              />
-              <span className="hidden sm:inline">
-                {isRefreshing ? "Refreshing..." : "Refresh"}
-              </span>
-              <span className="sm:hidden">↻</span>
-            </Button>
           </div>
         </div>
-
-
 
         <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">

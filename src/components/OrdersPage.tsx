@@ -460,7 +460,14 @@ interface Order {
 
 const OrdersPageContent = () => {
   const { orders, updateOrderStatus, addOrder } = useOrders();
-  const { cartItems, getTotalItems, getTotalPrice, clearCart } = useCart();
+  const {
+    cartItems,
+    getTotalItems,
+    getTotalPrice,
+    clearCart,
+    updateQuantity,
+    removeFromCart,
+  } = useCart();
   const [tableNumber, setTableNumber] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -652,10 +659,45 @@ const OrdersPageContent = () => {
                   <p className="font-bold text-gray-900 text-sm">
                     ${(item.price * item.quantity).toFixed(2)}
                   </p>
-                  <div className="flex items-center justify-end mt-1">
-                    <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">
-                      Qty: {item.quantity}
+                  <div className="flex items-center gap-1 mt-1">
+                    <div className="flex items-center border rounded-md bg-white">
+                      <button
+                        className="w-6 h-6 rounded-l-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors"
+                        onClick={() => {
+                          if (item.quantity > 1) {
+                            updateQuantity(item.menuItemId, item.quantity - 1);
+                          }
+                        }}
+                        disabled={item.quantity <= 1}
+                      >
+                        <span className="text-xs font-medium leading-none">
+                          −
+                        </span>
+                      </button>
+                      <span className="text-xs font-semibold text-gray-900 min-w-[24px] text-center px-2 py-1">
+                        {item.quantity}
+                      </span>
+                      <button
+                        className="w-6 h-6 rounded-r-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors"
+                        onClick={() => {
+                          updateQuantity(item.menuItemId, item.quantity + 1);
+                        }}
+                      >
+                        <span className="text-xs font-medium leading-none">
+                          +
+                        </span>
+                      </button>
                     </div>
+                    <button
+                      className="w-6 h-6 rounded-md bg-red-100 hover:bg-red-200 flex items-center justify-center text-red-600 transition-colors ml-1"
+                      onClick={() => {
+                        removeFromCart(item.menuItemId);
+                      }}
+                    >
+                      <span className="text-xs font-medium leading-none">
+                        ×
+                      </span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -742,45 +784,9 @@ const OrdersPageContent = () => {
                             ${(item.price * item.quantity).toFixed(2)}
                           </p>
                           <div className="flex items-center gap-1.5 sm:gap-2 bg-white rounded-full px-2 sm:px-3 py-1.5 sm:py-2 shadow-sm border">
-                            <button
-                              className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full shadow-sm flex items-center justify-center text-white transition-colors flex-shrink-0 ${
-                                order.status === "preparing" ||
-                                order.status === "ready" ||
-                                order.status === "completed"
-                                  ? "bg-gray-400 cursor-not-allowed"
-                                  : "bg-gray-900 hover:bg-black"
-                              }`}
-                              disabled={
-                                order.status === "preparing" ||
-                                order.status === "ready" ||
-                                order.status === "completed"
-                              }
-                            >
-                              <span className="text-sm sm:text-base font-medium leading-none">
-                                −
-                              </span>
-                            </button>
-                            <span className="text-xs sm:text-sm font-semibold text-gray-900 min-w-[20px] sm:min-w-[24px] text-center">
-                              {item.quantity}
+                            <span className="text-xs sm:text-sm font-semibold text-gray-900 min-w-[20px] sm:min-w-[24px] text-center bg-gray-100 rounded-full px-2 py-1">
+                              {item.quantity}x
                             </span>
-                            <button
-                              className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full shadow-sm flex items-center justify-center text-white transition-colors flex-shrink-0 ${
-                                order.status === "preparing" ||
-                                order.status === "ready" ||
-                                order.status === "completed"
-                                  ? "bg-gray-400 cursor-not-allowed"
-                                  : "bg-gray-900 hover:bg-black"
-                              }`}
-                              disabled={
-                                order.status === "preparing" ||
-                                order.status === "ready" ||
-                                order.status === "completed"
-                              }
-                            >
-                              <span className="text-sm sm:text-base font-medium leading-none">
-                                +
-                              </span>
-                            </button>
                           </div>
                         </div>
                       </div>

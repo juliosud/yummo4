@@ -154,49 +154,58 @@ const OrderCart = ({
                   </p>
                 </div>
 
-                {orderStatus === "pending" ? (
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center border rounded-md">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2"
-                        onClick={() =>
-                          onUpdateQuantity(
-                            item.id,
-                            Math.max(1, item.quantity - 1),
-                          )
-                        }
-                        disabled={item.quantity <= 1}
-                      >
-                        <Minus size={16} />
-                      </Button>
-                      <span className="w-8 text-center">{item.quantity}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2"
-                        onClick={() =>
-                          onUpdateQuantity(item.id, item.quantity + 1)
-                        }
-                      >
-                        <Plus size={16} />
-                      </Button>
-                    </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center border rounded-md">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => onRemoveItem(item.id)}
+                      className="h-8 px-2"
+                      onClick={() =>
+                        onUpdateQuantity(
+                          item.id,
+                          Math.max(1, item.quantity - 1),
+                        )
+                      }
+                      disabled={
+                        item.quantity <= 1 ||
+                        orderStatus === "preparing" ||
+                        orderStatus === "ready" ||
+                        orderStatus === "completed"
+                      }
                     >
-                      <Trash2 size={16} />
+                      <Minus size={16} />
+                    </Button>
+                    <span className="w-8 text-center">{item.quantity}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() =>
+                        onUpdateQuantity(item.id, item.quantity + 1)
+                      }
+                      disabled={
+                        orderStatus === "preparing" ||
+                        orderStatus === "ready" ||
+                        orderStatus === "completed"
+                      }
+                    >
+                      <Plus size={16} />
                     </Button>
                   </div>
-                ) : (
-                  <div className="text-right">
-                    <span className="font-medium">{item.quantity}x</span>
-                  </div>
-                )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => onRemoveItem(item.id)}
+                    disabled={
+                      orderStatus === "preparing" ||
+                      orderStatus === "ready" ||
+                      orderStatus === "completed"
+                    }
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>
