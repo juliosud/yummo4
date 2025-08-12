@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Search, Filter, Clock, Star, Plus, Minus } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import {
 import MenuItemCard, { MenuItemListCard } from "@/components/MenuItemCard";
 import BottomNavigation from "@/components/BottomNavigation";
 import SessionGuard from "@/components/SessionGuard";
+import { useSessionHeartbeat } from "@/hooks/useSessionHeartbeat";
 import { supabase } from "@/lib/supabase";
 
 interface MenuItem {
@@ -404,6 +406,18 @@ const staticMenuItems: MenuItem[] = [
 ];
 
 const CustomerMenuContent = () => {
+  // Helper to parse query parameters
+  function useQuery() {
+    const { search } = useLocation();
+    return useMemo(() => new URLSearchParams(search), [search]);
+  }
+
+  const query = useQuery();
+  const sessionCode = query.get("session") || undefined;
+
+  // Keep the session alive while browsing
+  useSessionHeartbeat(sessionCode);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [tableNumber, setTableNumber] = useState("");

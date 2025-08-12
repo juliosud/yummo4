@@ -11,7 +11,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, RefreshCw, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useOrders } from "@/contexts/OrderContext";
+import { useAdminOrders } from "@/contexts/AdminOrderContext";
 
 interface OrderItem {
   name: string;
@@ -37,10 +37,18 @@ const OrdersDashboard = ({ orders: propOrders }: { orders?: Order[] }) => {
     updateOrderStatus,
     refreshOrders,
     loading,
-  } = useOrders();
+  } = useAdminOrders();
+  
+
   const [activeTab, setActiveTab] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Debug: Log what we're getting from the admin context
+  useEffect(() => {
+    console.log("📊 OrdersDashboard: Admin context orders:", contextOrders);
+    console.log("📊 OrdersDashboard: Loading state:", loading);
+  }, [contextOrders, loading]);
 
   // Always prioritize context orders over prop orders or mock data
   // This ensures we're always showing the most up-to-date data from the database
@@ -188,6 +196,8 @@ const OrdersDashboard = ({ orders: propOrders }: { orders?: Order[] }) => {
             </Button>
           </div>
         </div>
+
+
 
         <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">

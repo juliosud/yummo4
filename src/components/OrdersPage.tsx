@@ -478,6 +478,12 @@ const OrdersPageContent = () => {
     });
   }, [orders]);
 
+  // Get current session code from URL
+  const getCurrentSessionCode = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get("session");
+  };
+
   // Get table number from URL params or use first order's table number
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -569,6 +575,7 @@ const OrdersPageContent = () => {
             items: orderItems,
             total: total,
             tableNumber: tableNumber || "1",
+            sessionCode: getCurrentSessionCode() || undefined,
           },
           "preparing",
         );
