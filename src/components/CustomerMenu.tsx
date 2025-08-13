@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Search, Filter, Clock, Star, Plus, Minus } from "lucide-react";
+import { Search, Filter, Clock, Star, Plus, Minus, ShoppingCart } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
 import { useCart } from "@/contexts/CartContext";
@@ -17,6 +17,8 @@ import BottomNavigation from "@/components/BottomNavigation";
 import SessionGuard from "@/components/SessionGuard";
 import { useSessionHeartbeat } from "@/hooks/useSessionHeartbeat";
 import { supabase } from "@/lib/supabase";
+import { useToast } from "@/components/ui/use-toast";
+import ChatDrawer from "@/components/ChatDrawer";
 
 interface MenuItem {
   id: string;
@@ -433,6 +435,7 @@ const CustomerMenuContent = () => {
     getTotalPrice,
     getItemQuantity,
   } = useCart();
+  const { toast } = useToast();
 
   // Fetch menu items from database
   const fetchMenuItems = async () => {
@@ -573,6 +576,38 @@ const CustomerMenuContent = () => {
       timeouts.forEach((timeout) => clearTimeout(timeout));
     };
   }, []);
+
+  // Listen for cart additions and show notifications
+  useEffect(() => {
+    console.log("🔔 CustomerMenu: Setting up cart notification listener");
+    
+    const handleCartItemAdded = (event: CustomEvent) => {
+      console.log("🔔 CustomerMenu: Cart event received:", event);
+      const { itemName, tableNumber } = event.detail;
+      
+      console.log(`🛒 Cart notification: ${itemName} added to Table ${tableNumber}'s cart`);
+      
+      // Show red notification popup on client side
+      toast({
+        variant: "destructive",
+        title: "🛒 Item Added to Cart!",
+        description: `${itemName} has been added to your cart`,
+        duration: 4000, // 4 seconds
+      });
+      
+      console.log("✅ Toast notification should have appeared");
+    };
+
+    // Add event listener
+    window.addEventListener('cartItemAdded', handleCartItemAdded as EventListener);
+    console.log("✅ Cart event listener added successfully");
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('cartItemAdded', handleCartItemAdded as EventListener);
+      console.log("🔕 Cart event listener removed");
+    };
+  }, [toast]);
 
   // Filter available menu items based on active category only
   const availableItems = menuItems.filter((item) => item.available);
@@ -729,6 +764,9 @@ const CustomerMenuContent = () => {
 
       {/* Bottom Navigation */}
       <BottomNavigation activeTab="home" />
+
+      {/* Chat Drawer (swipe/drag up to open) */}
+      <ChatDrawer triggerBottomOffsetClass="bottom-24" />
 
       {/* Item Detail Dialog */}
       <Dialog open={isItemDialogOpen} onOpenChange={setIsItemDialogOpen}>

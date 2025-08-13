@@ -262,6 +262,15 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         const newCartItems = [...cartItems, newItem];
         setCartItems(newCartItems);
         saveToLocalStorage(newCartItems);
+        
+        // Emit custom event for notification
+        const urlParams = new URLSearchParams(window.location.search);
+        const tableNumber = urlParams.get("table") || "1";
+        console.log("🛒 CartContext: Dispatching cartItemAdded event for localStorage mode");
+        window.dispatchEvent(new CustomEvent('cartItemAdded', {
+          detail: { itemName: item.name, tableNumber }
+        }));
+        console.log("✅ CartContext: Event dispatched successfully");
         return;
       }
 
@@ -290,6 +299,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
       const newCartItem = convertDBCartItemToCartItem(data);
       setCartItems([...cartItems, newCartItem]);
       saveToLocalStorage([...cartItems, newCartItem]);
+      
+      // Emit custom event for notification
+      console.log("🛒 CartContext: Dispatching cartItemAdded event for database mode");
+      window.dispatchEvent(new CustomEvent('cartItemAdded', {
+        detail: { itemName: item.name, tableNumber }
+      }));
+      console.log("✅ CartContext: Event dispatched successfully");
     } catch (error) {
       console.error("Error adding to cart:", error);
     }

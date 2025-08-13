@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, User, Sparkles } from "lucide-react";
+import { Send, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOrders } from "@/contexts/OrderContext";
 import { supabase, executeRawQuery } from "@/lib/supabase";
@@ -15,13 +15,15 @@ interface Message {
   timestamp: Date;
 }
 
+const STORAGE_KEY = "aiInsightsChat:v1";
+
 const AIInsightsChat = () => {
   const { orders, loading } = useOrders();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
       content:
-        "Hello! I'm your AI restaurant insights assistant with full database access. Just ask me any question about your restaurant - I'll automatically detect if I need to pull data from your database to answer it. You can ask in plain English about sales, popular items, table performance, customer analytics, or anything else. What would you like to know?",
+        "Hi! I’m your AI assistant. Ask anything about the menu, orders, or trends, and I’ll answer using your data.",
       sender: "ai",
       timestamp: new Date(),
     },
@@ -30,6 +32,47 @@ const AIInsightsChat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Load persisted conversation
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed?.messages)) {
+          setMessages(
+            parsed.messages.map((m: any) => ({
+              id: String(m.id),
+              content: String(m.content ?? ""),
+              sender: m.sender === "user" ? "user" : "ai",
+              timestamp: new Date(m.timestamp ?? Date.now()),
+            }))
+          );
+        }
+        if (typeof parsed?.draft === "string") {
+          setInputMessage(parsed.draft);
+        }
+      }
+    } catch (e) {
+      console.warn("AIInsightsChat: failed to load persisted chat");
+    }
+  }, []);
+
+  // Persist conversation + draft
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          messages: messages.map((m) => ({
+            ...m,
+            timestamp: m.timestamp.toISOString(),
+          })),
+          draft: inputMessage,
+        })
+      );
+    } catch {}
+  }, [messages, inputMessage]);
 
   // Execute SQL query and format results
   const executeSQLQuery = async (query: string) => {
@@ -46,31 +89,31 @@ const AIInsightsChat = () => {
 
       // Format results as a table-like string
       const columns = Object.keys(data[0]);
-      const maxRows = 10; // Limit results to prevent overwhelming response
+      const maxRows = 10; // Limit results
       const limitedData = data.slice(0, maxRows);
 
-      let result = `Found ${data.length} result(s)${data.length > maxRows ? ` (showing first ${maxRows})` : ""}:\n\n`;
+      let result = `Found ${data.length} result(s)${
+        data.length > maxRows ? ` (showing first ${maxRows})` : ""
+      }:\n\n`;
 
       // Create a simple table format
       result += columns.join(" | ") + "\n";
       result += columns.map(() => "---").join(" | ") + "\n";
 
       limitedData.forEach((row) => {
-        result +=
-          columns.map((col) => String(row[col] || "")).join(" | ") + "\n";
+        result += columns.map((col) => String(row[col] || "")).join(" | ") + "\n";
       });
 
       return result;
-    } catch (error) {
+    } catch (error: any) {
       console.error("SQL execution error:", error);
-      return `❌ Error executing query: ${error.message || "Unknown error"}`;
+      return `❌ Error executing query: ${error?.message || "Unknown error"}`;
     }
   };
 
   // Intelligent query detection - determines if a question needs database data
   const needsDatabaseData = (message: string): boolean => {
     const dataKeywords = [
-      // Numbers and analytics
       "how many",
       "how much",
       "total",
@@ -80,7 +123,6 @@ const AIInsightsChat = () => {
       "revenue",
       "sales",
       "profit",
-      // Time-based queries
       "today",
       "yesterday",
       "this week",
@@ -88,7 +130,6 @@ const AIInsightsChat = () => {
       "this month",
       "recent",
       "latest",
-      // Comparisons and rankings
       "most",
       "least",
       "best",
@@ -99,31 +140,23 @@ const AIInsightsChat = () => {
       "unpopular",
       "highest",
       "lowest",
-      // Status and operational
       "pending",
       "ready",
       "preparing",
       "completed",
-      "active",
-      "busy",
-      "slow",
-      // Business entities
       "orders",
       "customers",
       "tables",
       "menu",
       "items",
       "dishes",
-      "food",
       "drinks",
-      // Performance metrics
       "performance",
       "trends",
       "analysis",
       "insights",
       "statistics",
       "metrics",
-      // Questions about specific data
       "which",
       "what",
       "who",
@@ -135,7 +168,7 @@ const AIInsightsChat = () => {
     ];
 
     return dataKeywords.some((keyword) =>
-      message.toLowerCase().includes(keyword),
+      message.toLowerCase().includes(keyword)
     );
   };
 
@@ -344,7 +377,6 @@ const AIInsightsChat = () => {
         console.log(
           "🤖 AIInsightsChat: Using demo data (database not connected)",
         );
-        return "❌ **Database Not Connected**\n\nTo enable AI insights with real data:\n1. Go to project settings in Tempo\n2. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY\n3. Run the SQL setup from src/lib/supabase-ai-setup.sql\n\nCurrently using demo data for basic functionality.";
       }
 
       // Check if user is asking for explicit SQL query or database schema
@@ -372,7 +404,7 @@ const AIInsightsChat = () => {
         // Try to extract and execute SQL query from user message
         const sqlMatch = message.match(/(?:select|with)\s+[\s\S]*?(?:;|$)/i);
         if (sqlMatch) {
-          const query = sqlMatch[0].replace(/;$/, ""); // Remove trailing semicolon
+          const query = sqlMatch[0].replace(/;$/, "");
           return await executeSQLQuery(query);
         }
       }
@@ -390,92 +422,47 @@ const AIInsightsChat = () => {
           // Add contextual interpretation based on the question
           let interpretation = "";
           if (message.includes("revenue") || message.includes("sales")) {
-            interpretation = "💰 **Revenue Analysis**\n\n";
+            interpretation = "💰 Revenue Analysis\n\n";
           } else if (
             message.includes("popular") ||
             message.includes("best") ||
             message.includes("top")
           ) {
-            interpretation = "🏆 **Popular Items Analysis**\n\n";
+            interpretation = "🏆 Popular Items Analysis\n\n";
           } else if (message.includes("orders") && message.includes("status")) {
-            interpretation = "📋 **Order Status Overview**\n\n";
+            interpretation = "📋 Order Status Overview\n\n";
           } else if (message.includes("table")) {
-            interpretation = "🪑 **Table Performance Analysis**\n\n";
+            interpretation = "🪑 Table Performance Analysis\n\n";
           } else if (message.includes("customer")) {
-            interpretation = "👥 **Customer Analytics**\n\n";
+            interpretation = "👥 Customer Analytics\n\n";
           } else if (message.includes("menu")) {
-            interpretation = "🍽️ **Menu Analysis**\n\n";
+            interpretation = "🍽️ Menu Analysis\n\n";
           } else if (message.includes("hour") || message.includes("time")) {
-            interpretation = "⏰ **Time-based Analysis**\n\n";
+            interpretation = "⏰ Time-based Analysis\n\n";
           }
 
           return `${interpretation}${result}`;
         }
       }
 
-      // Check if user is asking for SQL query or database schema
-      if (
-        message.includes("sql") ||
-        message.includes("query") ||
-        message.includes("select") ||
-        message.includes("table")
-      ) {
-        if (
-          message.includes("schema") ||
-          message.includes("tables") ||
-          message.includes("structure")
-        ) {
-          // Show available tables
-          const schemaQuery = `
-            SELECT table_name, column_name, data_type 
-            FROM information_schema.columns 
-            WHERE table_schema = 'public' 
-            ORDER BY table_name, ordinal_position
-          `;
-          return await executeSQLQuery(schemaQuery);
-        }
-
-        // Try to extract and execute SQL query from user message
-        const sqlMatch = message.match(/(?:select|with)\s+[\s\S]*?(?:;|$)/i);
-        if (sqlMatch) {
-          const query = sqlMatch[0].replace(/;$/, ""); // Remove trailing semicolon
-          return await executeSQLQuery(query);
-        }
-      }
-
-      // Fallback to original logic for basic queries
-      if (isUsingMockData) {
-        console.log(
-          "🤖 AIInsightsChat: Using demo data (database not connected)",
-        );
-      }
-
+      // Fallback summaries using current orders in context
       if (message.includes("sales") || message.includes("revenue")) {
-        const totalRevenue = orders.reduce(
-          (sum, order) => sum + order.total,
-          0,
-        );
+        const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
         const todayOrders = orders.filter((order) => {
           const orderDate = new Date(order.orderTime);
           const today = new Date();
           return orderDate.toDateString() === today.toDateString();
         });
-        const todayRevenue = todayOrders.reduce(
-          (sum, order) => sum + order.total,
-          0,
-        );
+        const todayRevenue = todayOrders.reduce((sum, order) => sum + order.total, 0);
 
-        return `Based on your current ${dataSource} data, you have ${orders.length} total orders with ${totalRevenue.toFixed(2)} in total revenue. Today you've had ${todayOrders.length} orders generating ${todayRevenue.toFixed(2)}. Your average order value is ${(totalRevenue / orders.length || 0).toFixed(2)}.${isUsingMockData ? " (Note: This is demo data. Connect to Supabase for real analytics.)" : ""}`;
+        return `Based on your ${dataSource} data, you have ${orders.length} total orders with $${totalRevenue.toFixed(2)} in revenue. Today: ${todayOrders.length} orders totaling $${todayRevenue.toFixed(2)}.`;
       }
 
       if (message.includes("popular") || message.includes("menu")) {
         const itemCounts = new Map<string, number>();
         orders.forEach((order) => {
           order.items.forEach((item) => {
-            itemCounts.set(
-              item.name,
-              (itemCounts.get(item.name) || 0) + item.quantity,
-            );
+            itemCounts.set(item.name, (itemCounts.get(item.name) || 0) + item.quantity);
           });
         });
 
@@ -484,13 +471,13 @@ const AIInsightsChat = () => {
           .slice(0, 3);
 
         if (sortedItems.length === 0) {
-          return `No orders found yet in your ${dataSource} data. Once you have some orders, I can analyze your most popular menu items.${isUsingMockData ? " Connect to Supabase to track real menu performance." : ""}`;
+          return `No orders yet in your ${dataSource} data. Once orders arrive, I can analyze popular menu items.`;
         }
 
         const topItems = sortedItems
-          .map(([name, count]) => `${name} (${count} orders)`)
+          .map(([name, count]) => `${name} (${count})`)
           .join(", ");
-        return `Your most popular items based on ${dataSource} data are: ${topItems}. These items are driving your sales and should be prominently featured in your menu.${isUsingMockData ? " (Demo data - connect to Supabase for real insights)" : ""}`;
+        return `Top items: ${topItems}.`;
       }
 
       if (message.includes("status") || message.includes("orders")) {
@@ -499,61 +486,20 @@ const AIInsightsChat = () => {
             acc[order.status] = (acc[order.status] || 0) + 1;
             return acc;
           },
-          {} as Record<string, number>,
+          {} as Record<string, number>
         );
 
         const statusSummary = Object.entries(statusCounts)
           .map(([status, count]) => `${count} ${status}`)
           .join(", ");
 
-        return `Current order status from ${dataSource} data: ${statusSummary}. ${statusCounts.pending || 0} orders are waiting to be prepared, ${statusCounts.preparing || 0} are being prepared, and ${statusCounts.ready || 0} are ready for pickup.${isUsingMockData ? " (Demo data - connect to Supabase for real-time order tracking)" : ""}`;
+        return `Current order status: ${statusSummary}.`;
       }
 
-      if (message.includes("table") || message.includes("seating")) {
-        const tableCounts = new Map<string, number>();
-        orders.forEach((order) => {
-          tableCounts.set(
-            order.tableNumber,
-            (tableCounts.get(order.tableNumber) || 0) + 1,
-          );
-        });
-
-        const busyTables = Array.from(tableCounts.entries())
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 3)
-          .map(([table, count]) => `Table ${table} (${count} orders)`)
-          .join(", ");
-
-        return `Table activity from ${dataSource} data: ${busyTables}. These tables have had the most orders. Consider optimizing seating arrangements based on this data.${isUsingMockData ? " (Demo data - connect to Supabase for real table analytics)" : ""}`;
-      }
-
-      // Default response with enhanced capabilities
-      return `I can help you analyze your restaurant data! Just ask me any question and I'll automatically pull the relevant data to answer it.
-
-🤖 **Smart Analysis**: I automatically detect when your question needs database data and fetch it
-📊 **Natural Language**: Ask questions in plain English - no need for technical terms
-🔍 **SQL Queries**: I can also run specific SQL queries if you prefer
-🗃️ **Database Schema**: Ask about "tables" or "schema" to see your database structure
-
-**Example Questions:**
-• "How much revenue did we make today?"
-• "What are our most popular menu items?"
-• "Which tables are the busiest?"
-• "How many orders are pending?"
-• "Show me sales by hour"
-• "What's our average order value?"
-• "How many customers did we serve this week?"
-
-**Technical Queries:**
-• "Run this SQL: SELECT * FROM orders WHERE status = 'pending'"
-• "Show me the database schema"
-
-**Available Data**: orders, menu items, tables, customers, revenue, and more!
-
-💡 **Just ask naturally** - I'll figure out what data you need and get it for you!`;
+      return "Ask me about sales, popular items, order status, or tables. I’ll automatically pull the data for you.";
     } catch (error) {
       console.error("Error generating AI response:", error);
-      return "I'm having trouble accessing your restaurant data right now. Please make sure your database connection is working properly.";
+      return "I'm having trouble accessing your data right now. Please check your database connection.";
     }
   };
 
@@ -570,10 +516,13 @@ const AIInsightsChat = () => {
     setMessages((prev) => [...prev, userMessage]);
     const currentMessage = inputMessage;
     setInputMessage("");
+    // Immediately re-focus input so user can continue typing next message
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
     setIsLoading(true);
 
     try {
-      // Generate AI response with real data
       const responseContent = await generateAIResponse(currentMessage);
 
       const aiResponse: Message = {
@@ -596,6 +545,8 @@ const AIInsightsChat = () => {
       setMessages((prev) => [...prev, errorResponse]);
     } finally {
       setIsLoading(false);
+      // Ensure focus returns to the input after response finishes
+      setTimeout(() => inputRef.current?.focus(), 0);
     }
   };
 
@@ -612,7 +563,7 @@ const AIInsightsChat = () => {
       if (scrollAreaRef.current) {
         const scrollElement = scrollAreaRef.current.querySelector(
           "[data-radix-scroll-area-viewport]",
-        );
+        ) as HTMLElement | null;
         if (scrollElement) {
           scrollElement.scrollTo({
             top: scrollElement.scrollHeight,
@@ -622,8 +573,7 @@ const AIInsightsChat = () => {
       }
     };
 
-    // Use setTimeout to ensure DOM is updated
-    const timeoutId = setTimeout(scrollToBottom, 100);
+    const timeoutId = setTimeout(scrollToBottom, 80);
     return () => clearTimeout(timeoutId);
   }, [messages, isLoading]);
 
@@ -631,10 +581,7 @@ const AIInsightsChat = () => {
     <Card className="bg-white h-full flex flex-col max-h-[600px]">
       <CardHeader className="pb-3 flex-shrink-0">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <div className="h-8 w-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
-            <Sparkles className="h-4 w-4 text-white" />
-          </div>
-          AI Restaurant Insights
+          <span className="text-gray-900">AI Assistant</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col p-0 min-h-0">
@@ -648,21 +595,16 @@ const AIInsightsChat = () => {
                   message.sender === "user" ? "justify-end" : "justify-start",
                 )}
               >
-                {message.sender === "ai" && (
-                  <div className="h-8 w-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <Bot className="h-4 w-4 text-white" />
-                  </div>
-                )}
                 <div
                   className={cn(
-                    "max-w-[80%] rounded-lg px-4 py-2 text-sm",
+                    "max-w-[80%] rounded-xl px-4 py-2 text-sm leading-relaxed",
                     message.sender === "user"
-                      ? "bg-blue-600 text-white ml-auto"
+                      ? "bg-gray-900 text-white ml-auto"
                       : "bg-gray-100 text-gray-900",
                   )}
                 >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
-                  <p className="text-xs opacity-70 mt-1">
+                  <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                  <p className="text-[10px] opacity-70 mt-1">
                     {message.timestamp.toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -678,20 +620,11 @@ const AIInsightsChat = () => {
             ))}
             {isLoading && (
               <div className="flex gap-3 justify-start">
-                <div className="h-8 w-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <Bot className="h-4 w-4 text-white" />
-                </div>
-                <div className="bg-gray-100 rounded-lg px-4 py-2 text-sm">
+                <div className="bg-gray-100 rounded-xl px-4 py-2 text-sm">
                   <div className="flex items-center gap-1">
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                    <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.1s" }}
-                    />
-                    <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.2s" }}
-                    />
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }} />
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
                   </div>
                 </div>
               </div>
@@ -705,7 +638,7 @@ const AIInsightsChat = () => {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Ask me anything about your restaurant - I'll get the data automatically..."
+              placeholder="Ask about the menu, sales, orders..."
               disabled={isLoading}
               className="flex-1"
             />
@@ -713,7 +646,7 @@ const AIInsightsChat = () => {
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isLoading}
               size="icon"
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-gray-900 hover:bg-black"
             >
               <Send className="h-4 w-4" />
             </Button>
