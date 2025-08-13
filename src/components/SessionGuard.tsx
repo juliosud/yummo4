@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { AlertCircle, Clock, QrCode } from "lucide-react";
+import { AlertCircle, Clock } from "lucide-react";
 import {
   checkSessionActive,
   getSessionCodeFromUrl,
@@ -106,25 +105,7 @@ const SessionGuard: React.FC<SessionGuardProps> = ({
               </div>
             )}
 
-            <div className="flex flex-col gap-3">
-              <Button
-                onClick={() => window.location.reload()}
-                className="w-full"
-              >
-                <QrCode className="h-4 w-4 mr-2" />
-                Scan QR Code Again
-              </Button>
-
-              <Button
-                variant="outline"
-                onClick={() => (window.location.href = "/")}
-                className="w-full"
-              >
-                Go to Homepage
-              </Button>
-            </div>
-
-            <div className="text-xs text-gray-500 mt-6">
+            <div className="text-xs text-gray-500 mt-2">
               Need help? Ask your server to start a new session for your table.
             </div>
           </CardContent>

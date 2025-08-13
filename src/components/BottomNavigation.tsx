@@ -26,7 +26,7 @@ const BottomNavigation = ({
 	const { getTotalItems } = useCart();
 	const cartItemCount = getTotalItems();
 	return (
-		<div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 px-4 py-2 pb-safe-bottom">
+		<div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 px-4 py-2 pb-safe-bottom rounded-t-3xl shadow-[0_-6px_18px_rgba(0,0,0,0.06)] overflow-hidden">
 			<div className="flex items-center justify-center max-w-sm mx-auto">
 				<div className="flex items-center justify-between w-full px-6">
 					<button

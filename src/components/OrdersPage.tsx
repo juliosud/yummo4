@@ -295,12 +295,6 @@ const OrdersPageContent = () => {
             <p className="text-gray-500 text-center">
               You haven't placed any orders yet.
             </p>
-            <Button
-              onClick={() => (window.location.href = "/menu")}
-              className="mt-4 bg-gray-800 hover:bg-gray-900 rounded-full px-6"
-            >
-              Browse Menu
-            </Button>
           </div>
         ) : (
           orders.map((order) => (
