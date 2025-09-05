@@ -19,6 +19,7 @@ interface OrderItem {
   price: number;
   quantity: number;
   image?: string;
+  comments?: string;
 }
 
 interface OrderCartProps {
@@ -149,6 +150,11 @@ const OrderCart = ({
               >
                 <div className="flex-1">
                   <h3 className="font-medium">{item.name}</h3>
+                  {item.comments && (
+                    <p className="text-xs text-blue-600 italic mt-1">
+                      "{item.comments}"
+                    </p>
+                  )}
                   <p className="text-sm text-muted-foreground">
                     ${item.price.toFixed(2)}
                   </p>

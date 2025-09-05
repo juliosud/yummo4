@@ -8,11 +8,13 @@ import DatabaseTest from "./components/DatabaseTest";
 import LandingPage from "./components/LandingPage";
 import AuthPage from "./components/AuthPage";
 import TerminalEntry from "@/pages/TerminalEntry";
+import CustomerDataView from "@/components/CustomerDataView";
 import { OrderProvider } from "./contexts/OrderContext";
 import { AdminOrderProvider } from "./contexts/AdminOrderContext";
 import { CartProvider } from "./contexts/CartContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { TableProvider } from "./contexts/TableContext";
+import { CustomerProvider } from "./contexts/CustomerContext";
 import routes from "tempo-routes";
 
 // Protected Route Component
@@ -92,6 +94,14 @@ function AppRoutes() {
       <Route path="/term/:id" element={<TerminalEntry />} />
       <Route path="/orders" element={<OrdersPage />} />
       <Route path="/database-test" element={<DatabaseTest />} />
+      <Route
+        path="/customers"
+        element={
+          <ProtectedRoute>
+            <CustomerDataView />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }
@@ -100,18 +110,20 @@ function App() {
   return (
     <AuthProvider>
       <TableProvider>
-        <OrderProvider>
-          <AdminOrderProvider>
-            <CartProvider>
-              <Suspense fallback={<p>Loading...</p>}>
-                <>
-                  <AppRoutes />
-                  {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
-                </>
-              </Suspense>
-            </CartProvider>
-          </AdminOrderProvider>
-        </OrderProvider>
+        <CustomerProvider>
+          <OrderProvider>
+            <AdminOrderProvider>
+              <CartProvider>
+                <Suspense fallback={<p>Loading...</p>}>
+                  <>
+                    <AppRoutes />
+                    {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
+                  </>
+                </Suspense>
+              </CartProvider>
+            </AdminOrderProvider>
+          </OrderProvider>
+        </CustomerProvider>
       </TableProvider>
     </AuthProvider>
   );

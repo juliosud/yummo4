@@ -24,6 +24,9 @@ interface Order {
   tableNumber: string;
   sessionCode?: string;
   estimatedMinutes?: number;
+  customerName?: string;
+  customerPhone?: string;
+  isTerminalOrder?: boolean;
 }
 
 interface AdminOrderContextType {
@@ -53,7 +56,7 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
   const [loading, setLoading] = useState(true);
 
   // Convert database order to context order format
-  const convertDBOrderToOrder = (dbOrder: any): Order => {
+  const convertDBOrderToOrder = (dbOrder: any, customerData?: any): Order => {
     const items: OrderItem[] =
       dbOrder.order_items?.map((item: any) => ({
         id: item.menu_item_id,
@@ -63,8 +66,11 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
         image:
           item.menu_item?.image ||
           "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80",
+        comments: item.comments || "",
       })) || [];
 
+    const isTerminalOrder = customerData && customerData.length > 0;
+    
     return {
       id: dbOrder.id,
       items,
@@ -74,6 +80,9 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
       tableNumber: dbOrder.table_number,
       sessionCode: dbOrder.session_code,
       estimatedMinutes: dbOrder.estimated_minutes,
+      customerName: isTerminalOrder ? customerData[0].name : dbOrder.customer_name,
+      customerPhone: isTerminalOrder ? customerData[0].phone : dbOrder.customer_phone,
+      isTerminalOrder,
     };
   };
 
@@ -116,8 +125,25 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
         `✅ AdminOrderContext: Successfully fetched ${data?.length || 0} orders from database`,
       );
       
-      const convertedOrders = data?.map(convertDBOrderToOrder) || [];
-      setOrders(convertedOrders);
+      // Get customer data for orders with session codes
+      const ordersWithCustomerData = await Promise.all(
+        (data || []).map(async (order) => {
+          if (order.session_code) {
+            try {
+              const { data: customerData } = await supabase.rpc('get_customer_by_session', {
+                p_session_code: order.session_code,
+              });
+              return convertDBOrderToOrder(order, customerData);
+            } catch (error) {
+              console.warn(`Could not fetch customer data for session ${order.session_code}:`, error);
+              return convertDBOrderToOrder(order);
+            }
+          }
+          return convertDBOrderToOrder(order);
+        })
+      );
+      
+      setOrders(ordersWithCustomerData);
     } catch (error) {
       console.error("Error fetching orders:", error);
       setOrders([]);

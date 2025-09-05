@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUpload } from "@/components/ui/image-upload";
 import MenuItemCard from "@/components/MenuItemCard";
 import { supabase } from "@/lib/supabase";
 
@@ -550,15 +551,11 @@ const MenuItemForm = ({
           />
         </div>
       </div>
-      <div>
-        <Label htmlFor="image">Image URL</Label>
-        <Input
-          id="image"
-          value={formData.image}
-          onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-          required
-        />
-      </div>
+      <ImageUpload
+        value={formData.image}
+        onChange={(url) => setFormData({ ...formData, image: url })}
+        onError={(error) => console.error('Image upload error:', error)}
+      />
       <div>
         <Label htmlFor="category">Category</Label>
         <select

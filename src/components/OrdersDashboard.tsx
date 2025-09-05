@@ -29,6 +29,7 @@ interface Order {
   timestamp: string;
   dineIn: boolean;
   takeaway: boolean;
+  isTerminalOrder?: boolean;
 }
 
 const OrdersDashboard = ({ orders: propOrders }: { orders?: Order[] }) => {
@@ -56,7 +57,7 @@ const OrdersDashboard = ({ orders: propOrders }: { orders?: Order[] }) => {
       ? contextOrders.map((order) => ({
           id: order.id,
           tableNumber: order.tableNumber,
-          customerName: `Customer ${order.tableNumber}`,
+          customerName: order.customerName || `Table ${order.tableNumber}`,
           items: order.items.map((item) => ({
             name: item.name,
             quantity: item.quantity,
@@ -83,6 +84,7 @@ const OrdersDashboard = ({ orders: propOrders }: { orders?: Order[] }) => {
           timestamp: order.orderTime.toISOString(),
           dineIn: true,
           takeaway: false,
+          isTerminalOrder: order.isTerminalOrder,
         }))
       : propOrders || mockOrders;
 
@@ -322,12 +324,19 @@ const OrderCard = ({ order, onStatusChange }: OrderCardProps) => {
                 {order.tableNumber}
               </div>
               <CardTitle className="text-xs sm:text-sm md:text-base truncate leading-tight">
-                Table {order.tableNumber}
+                {order.isTerminalOrder ? order.customerName : `Table ${order.tableNumber}`}
               </CardTitle>
             </div>
-            <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-0.5 sm:mt-1 truncate leading-tight">
-              Order #{order.id}
-            </p>
+            <div className="flex items-center gap-2 mt-0.5 sm:mt-1">
+              <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground truncate leading-tight">
+                Order #{order.id.slice(-4)}
+              </p>
+              {order.isTerminalOrder && (
+                <span className="text-[9px] sm:text-[10px] md:text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full">
+                  Terminal
+                </span>
+              )}
+            </div>
           </div>
           <Badge
             className={`${getStatusColor(order.status)} text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-1.5 py-0.5 flex-shrink-0 leading-none`}
@@ -343,19 +352,36 @@ const OrderCard = ({ order, onStatusChange }: OrderCardProps) => {
               key={index}
               className="text-[10px] sm:text-xs md:text-sm break-words leading-tight"
             >
-              <span className="font-medium text-primary">{item.quantity}x</span>
-              <span className="ml-1">{item.name}</span>
+              <div className="flex justify-between items-start">
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-primary">{item.quantity}x</span>
+                  <span className="ml-1">{item.name}</span>
+                </div>
+                <span className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground ml-2 flex-shrink-0">
+                  ${(item.price * item.quantity).toFixed(2)}
+                </span>
+              </div>
+              {item.comments && (
+                <div className="text-[9px] sm:text-[10px] md:text-xs text-blue-600 italic mt-1 ml-2">
+                  "{item.comments}"
+                </div>
+              )}
             </div>
           ))}
         </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-1 sm:gap-2 bg-muted/30 pt-1 sm:pt-2 px-2 sm:px-3 md:px-4 pb-2 sm:pb-3 md:pb-4 flex-shrink-0 mt-auto">
-        <div className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground text-center leading-tight">
-          {new Date(order.timestamp).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-          })}
+        <div className="flex justify-between items-center">
+          <div className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground leading-tight">
+            {new Date(order.timestamp).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            })}
+          </div>
+          <div className="text-[10px] sm:text-xs md:text-sm font-semibold text-primary">
+            ${order.total.toFixed(2)}
+          </div>
         </div>
 
         <div className="flex flex-col w-full gap-1">

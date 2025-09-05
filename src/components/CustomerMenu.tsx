@@ -3,6 +3,7 @@ import { Search, Filter, Clock, Star, Plus, Minus, ShoppingCart } from "lucide-r
 import { useLocation } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
 import { useCart } from "@/contexts/CartContext";
+import { useCustomer } from "@/contexts/CustomerContext";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import { useSessionHeartbeat } from "@/hooks/useSessionHeartbeat";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 import ChatDrawer from "@/components/ChatDrawer";
+import AddToCartDialog from "@/components/AddToCartDialog";
 
 interface MenuItem {
   id: string;
@@ -417,6 +419,9 @@ const CustomerMenuContent = () => {
   const query = useQuery();
   const sessionCode = query.get("session") || undefined;
 
+  // Get customer data from context
+  const { customer } = useCustomer();
+
   // Keep the session alive while browsing
   useSessionHeartbeat(sessionCode);
 
@@ -425,6 +430,8 @@ const CustomerMenuContent = () => {
   const [tableNumber, setTableNumber] = useState("");
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
+  const [addToCartItem, setAddToCartItem] = useState<MenuItem | null>(null);
+  const [isAddToCartDialogOpen, setIsAddToCartDialogOpen] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const {
@@ -623,14 +630,20 @@ const CustomerMenuContent = () => {
     ...new Set(availableItems.map((item) => item.category)),
   ];
 
-  const addToCart = async (item: MenuItem) => {
-    console.log("Adding to cart:", item.name);
+  const addToCart = async (item: MenuItem, comments?: string) => {
+    console.log("Adding to cart:", item.name, comments ? `with comments: ${comments}` : "");
     await addToCartContext({
       id: item.id,
       name: item.name,
       price: item.price,
       image: item.image,
+      comments,
     });
+  };
+
+  const handleAddToCartClick = (item: MenuItem) => {
+    setAddToCartItem(item);
+    setIsAddToCartDialogOpen(true);
   };
 
   const removeFromCart = async (itemId: string) => {
@@ -651,6 +664,11 @@ const CustomerMenuContent = () => {
         <div className="flex items-center justify-between gap-4 mb-4">
           <div>
             <h1 className="text-lg font-bold text-gray-900">Menu</h1>
+            {customer && (
+              <p className="text-sm text-gray-600 mt-1">
+                Welcome, {customer.name}
+              </p>
+            )}
           </div>
           {tableNumber && (
             <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white px-4 py-2 rounded-2xl text-sm font-semibold shadow-lg">
@@ -714,7 +732,7 @@ const CustomerMenuContent = () => {
                 key={item.id}
                 item={item}
                 variant="customer"
-                onAddToCart={addToCart}
+                onAddToCart={handleAddToCartClick}
                 onRemoveFromCart={removeFromCart}
                 onItemClick={handleItemClick}
                 cartQuantity={getItemQuantity(item.id)}
@@ -737,7 +755,7 @@ const CustomerMenuContent = () => {
               <MenuItemListCard
                 key={item.id}
                 item={item}
-                onAddToCart={addToCart}
+                onAddToCart={handleAddToCartClick}
                 onRemoveFromCart={removeFromCart}
                 onItemClick={handleItemClick}
                 cartQuantity={getItemQuantity(item.id)}
@@ -872,6 +890,14 @@ const CustomerMenuContent = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Add to Cart Dialog */}
+      <AddToCartDialog
+        item={addToCartItem}
+        isOpen={isAddToCartDialogOpen}
+        onClose={() => setIsAddToCartDialogOpen(false)}
+        onAddToCart={addToCart}
+      />
     </div>
   );
 };

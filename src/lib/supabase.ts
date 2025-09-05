@@ -118,6 +118,7 @@ export interface OrderItem {
   quantity: number;
   price: number;
   item_name: string;
+  comments?: string;
   menu_item?: MenuItem;
 }
 
@@ -130,6 +131,7 @@ export interface CartItem {
   price: number;
   item_name: string;
   item_image?: string;
+  comments?: string;
   created_at: string;
   updated_at: string;
   menu_item?: MenuItem;

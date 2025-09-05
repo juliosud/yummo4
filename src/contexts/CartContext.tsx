@@ -22,6 +22,7 @@ interface CartItem {
   price: number;
   quantity: number;
   image: string;
+  comments?: string;
 }
 
 interface CartContextType {
@@ -33,9 +34,11 @@ interface CartContextType {
     name: string;
     price: number;
     image: string;
+    comments?: string;
   }) => Promise<void>;
   removeFromCart: (menuItemId: string) => Promise<void>;
   updateQuantity: (menuItemId: string, quantity: number) => Promise<void>;
+  updateItemComments: (menuItemId: string, comments: string) => Promise<void>;
   clearCart: () => Promise<void>;
   getTotalItems: () => number;
   getTotalPrice: () => number;
@@ -103,6 +106,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
       image:
         dbCartItem.item_image ||
         "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80",
+      comments: dbCartItem.comments || "",
     };
   };
 
@@ -233,6 +237,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     name: string;
     price: number;
     image: string;
+    comments?: string;
   }) => {
     try {
       const existingItem = cartItems.find(
@@ -258,6 +263,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
           price: item.price,
           quantity: 1,
           image: item.image,
+          comments: item.comments || "",
         };
         const newCartItems = [...cartItems, newItem];
         setCartItems(newCartItems);
@@ -287,6 +293,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
           price: item.price,
           item_name: item.name,
           item_image: item.image,
+          comments: item.comments || "",
         })
         .select()
         .single();
@@ -406,6 +413,48 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
+  // Update item comments
+  const updateItemComments = async (menuItemId: string, comments: string) => {
+    try {
+      const existingItem = cartItems.find(
+        (cartItem) => cartItem.menuItemId === menuItemId,
+      );
+      if (!existingItem) return;
+
+      // Check if Supabase is properly configured
+      if (
+        !import.meta.env.VITE_SUPABASE_URL ||
+        !import.meta.env.VITE_SUPABASE_ANON_KEY
+      ) {
+        console.log("Supabase not configured, updating localStorage");
+        const newCartItems = cartItems.map((item) =>
+          item.menuItemId === menuItemId ? { ...item, comments } : item,
+        );
+        setCartItems(newCartItems);
+        saveToLocalStorage(newCartItems);
+        return;
+      }
+
+      const { error } = await supabase
+        .from("cart_items")
+        .update({ comments })
+        .eq("id", existingItem.id);
+
+      if (error) {
+        console.error("Error updating cart comments:", error);
+        return;
+      }
+
+      const newCartItems = cartItems.map((item) =>
+        item.menuItemId === menuItemId ? { ...item, comments } : item,
+      );
+      setCartItems(newCartItems);
+      saveToLocalStorage(newCartItems);
+    } catch (error) {
+      console.error("Error updating cart comments:", error);
+    }
+  };
+
   // Clear entire cart
   const clearCart = async () => {
     try {
@@ -509,6 +558,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         addToCart,
         removeFromCart,
         updateQuantity,
+        updateItemComments,
         clearCart,
         getTotalItems,
         getTotalPrice,
