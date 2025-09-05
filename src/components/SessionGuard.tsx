@@ -7,6 +7,7 @@ import {
   getSessionCodeFromUrl,
   getTableIdFromUrl,
   clearSessionData,
+  debugSessionInfo,
 } from "@/lib/session-utils";
 
 interface SessionGuardProps {
@@ -32,8 +33,14 @@ const SessionGuard: React.FC<SessionGuardProps> = ({
     }
 
     try {
+      console.log("🔍 SessionGuard: Starting session check...");
+      debugSessionInfo(); // Log all debug info
+
       const urlSessionCode = getSessionCodeFromUrl();
       const urlTableId = getTableIdFromUrl();
+
+      console.log("🔍 SessionGuard: Got session code:", urlSessionCode);
+      console.log("🔍 SessionGuard: Got table ID:", urlTableId);
 
       setSessionCode(urlSessionCode);
       setTableId(urlTableId);
@@ -47,6 +54,8 @@ const SessionGuard: React.FC<SessionGuardProps> = ({
 
       console.log("📱 Checking session:", urlSessionCode);
       const isActive = await checkSessionActive(urlSessionCode);
+      console.log("🔍 SessionGuard: Session active result:", isActive);
+
       setIsSessionActive(isActive);
       setRetryCount(0); // Reset retry count on success
       setLastError(null);
@@ -60,11 +69,13 @@ const SessionGuard: React.FC<SessionGuardProps> = ({
   };
 
   const handleRetry = async () => {
+    console.log("🔄 SessionGuard: Manual retry triggered");
     setRetryCount((prev) => prev + 1);
     await checkSession(true);
   };
 
   const handleClearSession = () => {
+    console.log("🗑️ SessionGuard: Clearing session data");
     clearSessionData();
     setSessionCode(null);
     setTableId(null);
@@ -73,7 +84,20 @@ const SessionGuard: React.FC<SessionGuardProps> = ({
     window.location.reload();
   };
 
+  const handleDebugLog = () => {
+    debugSessionInfo();
+    console.log("🔍 Current component state:", {
+      isSessionActive,
+      isLoading,
+      sessionCode,
+      tableId,
+      retryCount,
+      lastError,
+    });
+  };
+
   useEffect(() => {
+    console.log("🔍 SessionGuard: Component mounted, starting initial check");
     checkSession();
 
     // Check session status every 30 seconds, but less frequently on mobile to save battery
@@ -81,6 +105,7 @@ const SessionGuard: React.FC<SessionGuardProps> = ({
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
         navigator.userAgent
       );
+    console.log("📱 Device detected as mobile:", isMobile);
     const interval = setInterval(checkSession, isMobile ? 60000 : 30000); // 60s on mobile, 30s on desktop
 
     return () => clearInterval(interval);
@@ -170,6 +195,14 @@ const SessionGuard: React.FC<SessionGuardProps> = ({
                 className="w-full"
               >
                 Clear Session & Restart
+              </Button>
+
+              <Button
+                onClick={handleDebugLog}
+                variant="ghost"
+                className="w-full text-xs"
+              >
+                Show Debug Info (Check Console)
               </Button>
             </div>
 

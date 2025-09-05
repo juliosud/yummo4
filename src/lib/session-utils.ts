@@ -7,6 +7,8 @@ export const checkSessionActive = async (
   sessionCode: string
 ): Promise<boolean> => {
   try {
+    console.log("🔍 Starting session check for:", sessionCode);
+
     // If Supabase is not configured, allow access (fallback for development)
     if (
       !import.meta.env.VITE_SUPABASE_URL ||
@@ -16,6 +18,7 @@ export const checkSessionActive = async (
       return true;
     }
 
+    console.log("📡 Making database request for session:", sessionCode);
     const { data, error } = await supabase
       .from("customers")
       .select("*")
@@ -24,9 +27,11 @@ export const checkSessionActive = async (
 
     if (error) {
       console.error("❌ Session check error:", error);
+      console.error("❌ Error details:", JSON.stringify(error, null, 2));
       return false;
     }
 
+    console.log("📊 Database response:", data);
     const isActive = !!data;
     console.log(
       `🔍 Session check for ${sessionCode}: ${isActive ? "ACTIVE" : "INACTIVE"}`
@@ -75,27 +80,42 @@ export const getSessionDetails = async (sessionCode: string) => {
  */
 export const getSessionCodeFromUrl = (): string | null => {
   try {
-    // First try to get from localStorage (mobile browsers sometimes lose URL params)
-    const storedSession = localStorage.getItem("restaurant_session_code");
+    console.log("📱 Getting session code...");
+    console.log("📱 Current URL:", window.location.href);
+    console.log("📱 Search params:", window.location.search);
 
-    // Get from URL parameters
+    // Get from URL parameters first
     const urlParams = new URLSearchParams(window.location.search);
     const urlSession = urlParams.get("session");
+    console.log("📱 URL session param:", urlSession);
 
-    // If we have a URL session, store it and use it
-    if (urlSession) {
-      localStorage.setItem("restaurant_session_code", urlSession);
-      console.log("📱 Session from URL:", urlSession);
-      return urlSession;
+    // Try hash-based parameters (some QR codes use #)
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const hashSession = hashParams.get("session");
+    console.log("📱 Hash session param:", hashSession);
+
+    // First try to get from localStorage (mobile browsers sometimes lose URL params)
+    const storedSession = localStorage.getItem("restaurant_session_code");
+    console.log("📱 Stored session:", storedSession);
+
+    // Priority: URL > Hash > Storage
+    let finalSession = urlSession || hashSession || storedSession;
+
+    // If we have a URL or hash session, store it and use it
+    if (urlSession || hashSession) {
+      const sessionToStore = urlSession || hashSession;
+      localStorage.setItem("restaurant_session_code", sessionToStore!);
+      console.log("📱 Session stored:", sessionToStore);
+      return sessionToStore;
     }
 
     // If no URL session but we have stored session, use stored
     if (storedSession) {
-      console.log("📱 Session from storage:", storedSession);
+      console.log("📱 Using stored session:", storedSession);
       return storedSession;
     }
 
-    console.log("📱 No session found in URL or storage");
+    console.log("📱 No session found anywhere");
     return null;
   } catch (error) {
     console.error("❌ Error getting session code:", error);
@@ -108,27 +128,40 @@ export const getSessionCodeFromUrl = (): string | null => {
  */
 export const getTableIdFromUrl = (): string | null => {
   try {
-    // First try to get from localStorage
-    const storedTable = localStorage.getItem("restaurant_table_id");
+    console.log("📱 Getting table ID...");
 
     // Get from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const urlTable = urlParams.get("table");
+    console.log("📱 URL table param:", urlTable);
 
-    // If we have a URL table, store it and use it
-    if (urlTable) {
-      localStorage.setItem("restaurant_table_id", urlTable);
-      console.log("📱 Table from URL:", urlTable);
-      return urlTable;
+    // Try hash-based parameters
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const hashTable = hashParams.get("table");
+    console.log("📱 Hash table param:", hashTable);
+
+    // First try to get from localStorage
+    const storedTable = localStorage.getItem("restaurant_table_id");
+    console.log("📱 Stored table:", storedTable);
+
+    // Priority: URL > Hash > Storage
+    let finalTable = urlTable || hashTable || storedTable;
+
+    // If we have a URL or hash table, store it and use it
+    if (urlTable || hashTable) {
+      const tableToStore = urlTable || hashTable;
+      localStorage.setItem("restaurant_table_id", tableToStore!);
+      console.log("📱 Table stored:", tableToStore);
+      return tableToStore;
     }
 
     // If no URL table but we have stored table, use stored
     if (storedTable) {
-      console.log("📱 Table from storage:", storedTable);
+      console.log("📱 Using stored table:", storedTable);
       return storedTable;
     }
 
-    console.log("📱 No table found in URL or storage");
+    console.log("📱 No table found anywhere");
     return null;
   } catch (error) {
     console.error("❌ Error getting table ID:", error);
@@ -147,4 +180,26 @@ export const clearSessionData = (): void => {
   } catch (error) {
     console.error("❌ Error clearing session data:", error);
   }
+};
+
+/**
+ * Debug function to log all session-related information
+ */
+export const debugSessionInfo = (): void => {
+  console.log("🔍 === SESSION DEBUG INFO ===");
+  console.log("📱 User Agent:", navigator.userAgent);
+  console.log("📱 Current URL:", window.location.href);
+  console.log("📱 Search params:", window.location.search);
+  console.log("📱 Hash:", window.location.hash);
+  console.log(
+    "📱 Stored session:",
+    localStorage.getItem("restaurant_session_code")
+  );
+  console.log("📱 Stored table:", localStorage.getItem("restaurant_table_id"));
+  console.log("📱 Environment URL:", import.meta.env.VITE_SUPABASE_URL);
+  console.log(
+    "📱 Environment Key exists:",
+    !!import.meta.env.VITE_SUPABASE_ANON_KEY
+  );
+  console.log("🔍 === END DEBUG INFO ===");
 };
