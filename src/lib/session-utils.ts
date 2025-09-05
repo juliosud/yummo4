@@ -19,24 +19,84 @@ export const checkSessionActive = async (
     }
 
     console.log("📡 Making database request for session:", sessionCode);
-    const { data, error } = await supabase
-      .from("customers")
-      .select("*")
-      .eq("session_code", sessionCode)
-      .maybeSingle();
 
-    if (error) {
-      console.error("❌ Session check error:", error);
-      console.error("❌ Error details:", JSON.stringify(error, null, 2));
-      return false;
+    // Add timeout for mobile networks
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    try {
+      const { data, error } = await supabase
+        .from("customers")
+        .select("*")
+        .eq("session_code", sessionCode)
+        .abortSignal(controller.signal);
+
+      clearTimeout(timeoutId);
+
+      if (error) {
+        console.error("❌ Session check error:", error);
+        console.error("❌ Error details:", JSON.stringify(error, null, 2));
+
+        // If it's a network error, try to be more lenient
+        if (
+          error.message?.includes("fetch") ||
+          error.message?.includes("network")
+        ) {
+          console.log(
+            "🌐 Network error detected, checking localStorage for fallback"
+          );
+          // For network errors, check if we have recent session data
+          const lastCheck = localStorage.getItem(
+            `session_check_${sessionCode}`
+          );
+          if (lastCheck) {
+            const lastCheckTime = parseInt(lastCheck);
+            const now = Date.now();
+            // If we checked successfully within the last 5 minutes, assume still active
+            if (now - lastCheckTime < 5 * 60 * 1000) {
+              console.log("📱 Using cached session status (network fallback)");
+              return true;
+            }
+          }
+        }
+
+        return false;
+      }
+
+      console.log("📊 Database response:", data);
+      const isActive = !!data;
+
+      // Cache successful check
+      if (isActive) {
+        localStorage.setItem(
+          `session_check_${sessionCode}`,
+          Date.now().toString()
+        );
+      }
+
+      console.log(
+        `🔍 Session check for ${sessionCode}: ${
+          isActive ? "ACTIVE" : "INACTIVE"
+        }`
+      );
+      return isActive;
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === "AbortError") {
+        console.error("❌ Session check timed out");
+        // On timeout, check cache
+        const lastCheck = localStorage.getItem(`session_check_${sessionCode}`);
+        if (lastCheck) {
+          const lastCheckTime = parseInt(lastCheck);
+          const now = Date.now();
+          if (now - lastCheckTime < 5 * 60 * 1000) {
+            console.log("📱 Using cached session status (timeout fallback)");
+            return true;
+          }
+        }
+      }
+      throw fetchError;
     }
-
-    console.log("📊 Database response:", data);
-    const isActive = !!data;
-    console.log(
-      `🔍 Session check for ${sessionCode}: ${isActive ? "ACTIVE" : "INACTIVE"}`
-    );
-    return isActive;
   } catch (error) {
     console.error("❌ Session check failed:", error);
     return false;

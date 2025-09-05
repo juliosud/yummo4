@@ -17,10 +17,17 @@ const createMockClient = () => {
         eq: (column: string, value: any) => ({
           maybeSingle: () => Promise.resolve({ data: null, error: null }),
           single: () => Promise.resolve({ data: null, error: null }),
+          abortSignal: (signal: AbortSignal) => ({
+            maybeSingle: () => Promise.resolve({ data: null, error: null }),
+            single: () => Promise.resolve({ data: null, error: null }),
+          }),
         }),
-        order: (column: string, options?: any) => Promise.resolve({ data: [], error: null }),
+        order: (column: string, options?: any) =>
+          Promise.resolve({ data: [], error: null }),
         single: () => Promise.resolve({ data: null, error: null }),
         maybeSingle: () => Promise.resolve({ data: null, error: null }),
+        abortSignal: (signal: AbortSignal) =>
+          Promise.resolve({ data: [], error: null }),
       }),
       insert: (data: any) => Promise.resolve({ data: null, error: null }),
       update: (data: any) => ({
@@ -32,9 +39,11 @@ const createMockClient = () => {
           Promise.resolve({ data: null, error: null }),
       }),
     }),
-    rpc: (fn: string, params?: any) => Promise.resolve({ data: null, error: null }),
+    rpc: (fn: string, params?: any) =>
+      Promise.resolve({ data: null, error: null }),
     functions: {
-      invoke: (fn: string, options?: any) => Promise.resolve({ data: null, error: null }),
+      invoke: (fn: string, options?: any) =>
+        Promise.resolve({ data: null, error: null }),
     },
     channel: (name: string) => ({
       on: (event: string, config: any, callback: Function) => ({
