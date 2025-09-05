@@ -54,13 +54,25 @@ export default function TerminalEntry() {
     try {
       setSubmitting(true);
 
-      // Ask the DB to create a brand-new session for this terminal
-      const { data, error: rpcError } = await supabase.rpc("start_terminal_session", {
+      // Ask the DB to create a brand-new session for this terminal and store customer data
+      const phoneDigits = phone.replace(/\D/g, "");
+      const customerName = fullName.trim();
+      
+      console.log("Calling start_terminal_session with:", {
         p_table_id: id,
+        p_customer_name: customerName,
+        p_customer_phone: phoneDigits,
+      });
+
+      const { data, error: rpcError } = await supabase.rpc("start_terminal_session", {
+        p_table_id: id as string,
+        p_customer_name: customerName as string,
+        p_customer_phone: phoneDigits as string,
       });
 
       if (rpcError || !data) {
         console.error("start_terminal_session error:", rpcError);
+        console.error("Error details:", JSON.stringify(rpcError, null, 2));
         setError("We couldn't start your session. Please try again or ask for help.");
         setSubmitting(false);
         return;
@@ -70,11 +82,10 @@ export default function TerminalEntry() {
 
       // Persist guest info for this session locally (works with/without DB)
       const guestKey = `guest-info-${id}-${sessionCode}`;
-      const phoneDigits = phone.replace(/\D/g, "");
       try {
         localStorage.setItem(
           guestKey,
-          JSON.stringify({ name: fullName.trim(), phone: phoneDigits, createdAt: new Date().toISOString() })
+          JSON.stringify({ name: customerName, phone: phoneDigits, createdAt: new Date().toISOString() })
         );
       } catch {}
 
@@ -82,7 +93,7 @@ export default function TerminalEntry() {
       const url = new URL("/menu", window.location.origin);
       url.searchParams.set("table", id);
       url.searchParams.set("session", sessionCode);
-      url.searchParams.set("guestName", fullName.trim());
+      url.searchParams.set("guestName", customerName);
       url.searchParams.set("guestPhone", phoneDigits);
       window.location.replace(url.toString());
     } finally {

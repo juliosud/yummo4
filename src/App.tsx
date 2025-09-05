@@ -8,12 +8,35 @@ import DatabaseTest from "./components/DatabaseTest";
 import LandingPage from "./components/LandingPage";
 import AuthPage from "./components/AuthPage";
 import TerminalEntry from "@/pages/TerminalEntry";
+import CustomerDataView from "@/components/CustomerDataView";
 import { OrderProvider } from "./contexts/OrderContext";
 import { AdminOrderProvider } from "./contexts/AdminOrderContext";
 import { CartProvider } from "./contexts/CartContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { TableProvider } from "./contexts/TableContext";
+import { CustomerProvider } from "./contexts/CustomerContext";
+import { RestaurantProvider, useRestaurant } from "./contexts/RestaurantContext";
+import RestaurantSetup from "./components/RestaurantSetup";
 import routes from "tempo-routes";
+
+// Restaurant Guard Component
+const RestaurantGuard = ({ children }: { children: React.ReactNode }) => {
+  const { restaurant, loading } = useRestaurant();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading restaurant...</p>
+      </div>
+    );
+  }
+
+  if (!restaurant) {
+    return <RestaurantSetup />;
+  }
+
+  return <>{children}</>;
+};
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -31,7 +54,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  return <>{children}</>;
+  return <RestaurantGuard>{children}</RestaurantGuard>;
 };
 
 // Public Route Component (redirects to dashboard if already logged in)
@@ -92,6 +115,14 @@ function AppRoutes() {
       <Route path="/term/:id" element={<TerminalEntry />} />
       <Route path="/orders" element={<OrdersPage />} />
       <Route path="/database-test" element={<DatabaseTest />} />
+      <Route
+        path="/customers"
+        element={
+          <ProtectedRoute>
+            <CustomerDataView />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }
@@ -99,20 +130,24 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <TableProvider>
-        <OrderProvider>
-          <AdminOrderProvider>
-            <CartProvider>
-              <Suspense fallback={<p>Loading...</p>}>
-                <>
-                  <AppRoutes />
-                  {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
-                </>
-              </Suspense>
-            </CartProvider>
-          </AdminOrderProvider>
-        </OrderProvider>
-      </TableProvider>
+      <RestaurantProvider>
+        <TableProvider>
+          <CustomerProvider>
+            <OrderProvider>
+              <AdminOrderProvider>
+                <CartProvider>
+                  <Suspense fallback={<p>Loading...</p>}>
+                    <>
+                      <AppRoutes />
+                      {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
+                    </>
+                  </Suspense>
+                </CartProvider>
+              </AdminOrderProvider>
+            </OrderProvider>
+          </CustomerProvider>
+        </TableProvider>
+      </RestaurantProvider>
     </AuthProvider>
   );
 }

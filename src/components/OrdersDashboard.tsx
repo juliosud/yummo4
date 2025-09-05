@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, RefreshCw, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAdminOrders } from "@/contexts/AdminOrderContext";
+import OrderDetailsDialog from "@/components/OrderDetailsDialog";
 
 interface OrderItem {
   name: string;
@@ -29,6 +30,7 @@ interface Order {
   timestamp: string;
   dineIn: boolean;
   takeaway: boolean;
+  isTerminalOrder?: boolean;
 }
 
 const OrdersDashboard = ({ orders: propOrders }: { orders?: Order[] }) => {
@@ -42,6 +44,8 @@ const OrdersDashboard = ({ orders: propOrders }: { orders?: Order[] }) => {
   const [activeTab, setActiveTab] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
 
   // Debug: Log what we're getting from the admin context
   useEffect(() => {
@@ -56,7 +60,7 @@ const OrdersDashboard = ({ orders: propOrders }: { orders?: Order[] }) => {
       ? contextOrders.map((order) => ({
           id: order.id,
           tableNumber: order.tableNumber,
-          customerName: `Customer ${order.tableNumber}`,
+          customerName: order.customerName || `Table ${order.tableNumber}`,
           items: order.items.map((item) => ({
             name: item.name,
             quantity: item.quantity,
@@ -83,6 +87,7 @@ const OrdersDashboard = ({ orders: propOrders }: { orders?: Order[] }) => {
           timestamp: order.orderTime.toISOString(),
           dineIn: true,
           takeaway: false,
+          isTerminalOrder: order.isTerminalOrder,
         }))
       : propOrders || mockOrders;
 
@@ -161,6 +166,16 @@ const OrdersDashboard = ({ orders: propOrders }: { orders?: Order[] }) => {
     }
   };
 
+  const handleOrderClick = (order: Order) => {
+    setSelectedOrder(order);
+    setIsOrderDetailsOpen(true);
+  };
+
+  const handleCloseOrderDetails = () => {
+    setIsOrderDetailsOpen(false);
+    setSelectedOrder(null);
+  };
+
   return (
     <div className="w-full h-full bg-background p-3 sm:p-4 lg:p-6">
       <div className="flex flex-col space-y-4 sm:space-y-6">
@@ -229,6 +244,7 @@ const OrdersDashboard = ({ orders: propOrders }: { orders?: Order[] }) => {
                     key={order.id}
                     order={order}
                     onStatusChange={handleUpdateOrderStatus}
+                    onOrderClick={handleOrderClick}
                   />
                 ))
               ) : (
@@ -270,6 +286,13 @@ const OrdersDashboard = ({ orders: propOrders }: { orders?: Order[] }) => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Order Details Dialog */}
+      <OrderDetailsDialog
+        order={selectedOrder}
+        isOpen={isOrderDetailsOpen}
+        onClose={handleCloseOrderDetails}
+      />
     </div>
   );
 };
@@ -280,9 +303,10 @@ interface OrderCardProps {
     orderId: string,
     status: "Ready" | "In Progress" | "Completed" | "Archived",
   ) => void;
+  onOrderClick: (order: Order) => void;
 }
 
-const OrderCard = ({ order, onStatusChange }: OrderCardProps) => {
+const OrderCard = ({ order, onStatusChange, onOrderClick }: OrderCardProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const handleStatusChange = async (
     newStatus: "Ready" | "In Progress" | "Completed" | "Archived",
@@ -313,7 +337,10 @@ const OrderCard = ({ order, onStatusChange }: OrderCardProps) => {
   };
 
   return (
-    <Card className="overflow-hidden h-full flex flex-col min-h-[280px] max-w-full">
+    <Card 
+      className="overflow-hidden h-full flex flex-col min-h-[280px] max-w-full cursor-pointer hover:shadow-lg transition-shadow"
+      onClick={() => onOrderClick(order)}
+    >
       <CardHeader className="pb-1 px-2 sm:px-3 md:px-4 pt-2 sm:pt-3 md:pt-4 flex-shrink-0">
         <div className="flex justify-between items-start gap-1 sm:gap-2">
           <div className="min-w-0 flex-1 overflow-hidden">
@@ -322,12 +349,19 @@ const OrderCard = ({ order, onStatusChange }: OrderCardProps) => {
                 {order.tableNumber}
               </div>
               <CardTitle className="text-xs sm:text-sm md:text-base truncate leading-tight">
-                Table {order.tableNumber}
+                {order.isTerminalOrder ? order.customerName : `Table ${order.tableNumber}`}
               </CardTitle>
             </div>
-            <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-0.5 sm:mt-1 truncate leading-tight">
-              Order #{order.id}
-            </p>
+            <div className="flex items-center gap-2 mt-0.5 sm:mt-1">
+              <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground truncate leading-tight">
+                Order #{order.id.slice(-4)}
+              </p>
+              {order.isTerminalOrder && (
+                <span className="text-[9px] sm:text-[10px] md:text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full">
+                  Terminal
+                </span>
+              )}
+            </div>
           </div>
           <Badge
             className={`${getStatusColor(order.status)} text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-1.5 py-0.5 flex-shrink-0 leading-none`}
@@ -343,19 +377,36 @@ const OrderCard = ({ order, onStatusChange }: OrderCardProps) => {
               key={index}
               className="text-[10px] sm:text-xs md:text-sm break-words leading-tight"
             >
-              <span className="font-medium text-primary">{item.quantity}x</span>
-              <span className="ml-1">{item.name}</span>
+              <div className="flex justify-between items-start">
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-primary">{item.quantity}x</span>
+                  <span className="ml-1">{item.name}</span>
+                </div>
+                <span className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground ml-2 flex-shrink-0">
+                  ${(item.price * item.quantity).toFixed(2)}
+                </span>
+              </div>
+              {item.comments && (
+                <div className="text-[9px] sm:text-[10px] md:text-xs text-blue-600 italic mt-1 ml-2">
+                  "{item.comments}"
+                </div>
+              )}
             </div>
           ))}
         </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-1 sm:gap-2 bg-muted/30 pt-1 sm:pt-2 px-2 sm:px-3 md:px-4 pb-2 sm:pb-3 md:pb-4 flex-shrink-0 mt-auto">
-        <div className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground text-center leading-tight">
-          {new Date(order.timestamp).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-          })}
+        <div className="flex justify-between items-center">
+          <div className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground leading-tight">
+            {new Date(order.timestamp).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            })}
+          </div>
+          <div className="text-[10px] sm:text-xs md:text-sm font-semibold text-primary">
+            ${order.total.toFixed(2)}
+          </div>
         </div>
 
         <div className="flex flex-col w-full gap-1">
@@ -363,7 +414,10 @@ const OrderCard = ({ order, onStatusChange }: OrderCardProps) => {
             <>
               <Button
                 size="sm"
-                onClick={() => handleStatusChange("Ready")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStatusChange("Ready");
+                }}
                 disabled={isUpdating}
                 className="bg-green-600 hover:bg-green-700 text-white text-[10px] sm:text-xs px-2 py-1 h-6 sm:h-7 md:h-8 w-full min-h-0 leading-none"
               >
@@ -383,7 +437,10 @@ const OrderCard = ({ order, onStatusChange }: OrderCardProps) => {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => handleStatusChange("Completed")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStatusChange("Completed");
+                }}
                 disabled={isUpdating}
                 className="border-blue-600 text-blue-600 hover:bg-blue-50 text-[10px] sm:text-xs px-2 py-1 h-6 sm:h-7 md:h-8 w-full min-h-0 leading-none"
               >
@@ -405,7 +462,10 @@ const OrderCard = ({ order, onStatusChange }: OrderCardProps) => {
           {order.status === "Ready" && (
             <Button
               size="sm"
-              onClick={() => handleStatusChange("Completed")}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStatusChange("Completed");
+              }}
               disabled={isUpdating}
               className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] sm:text-xs px-2 py-1 h-6 sm:h-7 md:h-8 w-full min-h-0 leading-none"
             >
@@ -426,7 +486,10 @@ const OrderCard = ({ order, onStatusChange }: OrderCardProps) => {
           {order.status === "Completed" && (
             <Button
               size="sm"
-              onClick={() => handleStatusChange("Archived")}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStatusChange("Archived");
+              }}
               disabled={isUpdating}
               className="bg-slate-600 hover:bg-slate-700 text-white text-[10px] sm:text-xs px-2 py-1 h-6 sm:h-7 md:h-8 w-full min-h-0 leading-none"
             >
