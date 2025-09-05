@@ -19,44 +19,60 @@ const STORAGE_KEY = "aiInsightsChat:v1";
 
 const AIInsightsChat = () => {
   const { orders, loading } = useOrders();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      content:
-        "Hi! I’m your AI assistant. Ask anything about the menu, orders, or trends, and I’ll answer using your data.",
-      sender: "ai",
-      timestamp: new Date(),
-    },
-  ]);
-  const [inputMessage, setInputMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Load persisted conversation
-  useEffect(() => {
+  const [messages, setMessages] = useState<Message[]>(() => {
+    // Try to load from sessionStorage first
     try {
       const raw = sessionStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed?.messages)) {
-          setMessages(
-            parsed.messages.map((m: any) => ({
-              id: String(m.id),
-              content: String(m.content ?? ""),
-              sender: m.sender === "user" ? "user" : "ai",
-              timestamp: new Date(m.timestamp ?? Date.now()),
-            }))
-          );
-        }
-        if (typeof parsed?.draft === "string") {
-          setInputMessage(parsed.draft);
+        if (Array.isArray(parsed?.messages) && parsed.messages.length > 0) {
+          return parsed.messages.map((m: any) => ({
+            id: String(m.id),
+            content: String(m.content ?? ""),
+            sender: m.sender === "user" ? "user" : "ai",
+            timestamp: new Date(m.timestamp ?? Date.now()),
+          }));
         }
       }
     } catch (e) {
-      console.warn("AIInsightsChat: failed to load persisted chat");
+      console.warn("Failed to load persisted chat messages");
     }
-  }, []);
+    
+    // Default welcome message if no saved messages
+    return [
+      {
+        id: "1",
+        content: "Hi! I'm your AI assistant. Ask me about the menu, orders, or trends and I'll answer using your data.",
+        sender: "ai",
+        timestamp: new Date(),
+      },
+    ];
+  });
+  const [inputMessage, setInputMessage] = useState(() => {
+    // Try to load saved draft from sessionStorage
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed?.draft === "string") {
+          return parsed.draft;
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to load saved draft");
+    }
+    return "";
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-scroll to bottom when new messages are added
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   // Persist conversation + draft
   useEffect(() => {
@@ -101,7 +117,8 @@ const AIInsightsChat = () => {
       result += columns.map(() => "---").join(" | ") + "\n";
 
       limitedData.forEach((row) => {
-        result += columns.map((col) => String(row[col] || "")).join(" | ") + "\n";
+        result +=
+          columns.map((col) => String(row[col] || "")).join(" | ") + "\n";
       });
 
       return result;
@@ -172,9 +189,37 @@ const AIInsightsChat = () => {
     );
   };
 
+  // All customer queries now go to OpenAI-powered menu analysis
+  const isMenuQuery = (message: string): boolean => {
+    // For customers, all queries are menu-related and handled by OpenAI
+    return true;
+  };
+
+  // Call menu analysis edge function
+  const analyzeMenuQuery = async (query: string): Promise<string> => {
+    try {
+      const { data, error } = await supabase.functions.invoke("menu-analysis", {
+        body: { query },
+      });
+
+      if (error) {
+        console.error("Menu analysis error:", error);
+        return "I'm having trouble analyzing the menu right now. Please try again in a moment.";
+      }
+
+      return (
+        data.response ||
+        "I couldn't find relevant menu information for your query."
+      );
+    } catch (error) {
+      console.error("Error calling menu analysis function:", error);
+      return "I'm having trouble accessing menu information right now. Please try again later.";
+    }
+  };
+
   // Smart query generator based on natural language
   const generateSmartQuery = async (
-    userMessage: string,
+    userMessage: string
   ): Promise<string | null> => {
     const message = userMessage.toLowerCase();
 
@@ -232,8 +277,8 @@ const AIInsightsChat = () => {
       const timeFilter = message.includes("today")
         ? "AND o.created_at >= CURRENT_DATE"
         : message.includes("week")
-          ? "AND o.created_at >= CURRENT_DATE - INTERVAL '7 days'"
-          : "";
+        ? "AND o.created_at >= CURRENT_DATE - INTERVAL '7 days'"
+        : "";
 
       return `
         SELECT 
@@ -375,8 +420,16 @@ const AIInsightsChat = () => {
 
       if (isUsingMockData) {
         console.log(
-          "🤖 AIInsightsChat: Using demo data (database not connected)",
+          "🤖 AIInsightsChat: Using demo data (database not connected)"
         );
+      }
+
+      // Check for menu-related queries first (for customer-facing chat)
+      if (isMenuQuery(userMessage)) {
+        console.log(
+          "🍽️ AI detected menu-related query, calling menu analysis function..."
+        );
+        return await analyzeMenuQuery(userMessage);
       }
 
       // Check if user is asking for explicit SQL query or database schema
@@ -412,7 +465,7 @@ const AIInsightsChat = () => {
       // Intelligent data fetching - check if question needs database data
       if (needsDatabaseData(userMessage)) {
         console.log(
-          "🤖 AI detected question needs database data, generating smart query...",
+          "🤖 AI detected question needs database data, generating smart query..."
         );
 
         const smartQuery = await generateSmartQuery(userMessage);
@@ -447,22 +500,35 @@ const AIInsightsChat = () => {
 
       // Fallback summaries using current orders in context
       if (message.includes("sales") || message.includes("revenue")) {
-        const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+        const totalRevenue = orders.reduce(
+          (sum, order) => sum + order.total,
+          0
+        );
         const todayOrders = orders.filter((order) => {
           const orderDate = new Date(order.orderTime);
           const today = new Date();
           return orderDate.toDateString() === today.toDateString();
         });
-        const todayRevenue = todayOrders.reduce((sum, order) => sum + order.total, 0);
+        const todayRevenue = todayOrders.reduce(
+          (sum, order) => sum + order.total,
+          0
+        );
 
-        return `Based on your ${dataSource} data, you have ${orders.length} total orders with $${totalRevenue.toFixed(2)} in revenue. Today: ${todayOrders.length} orders totaling $${todayRevenue.toFixed(2)}.`;
+        return `Based on your ${dataSource} data, you have ${
+          orders.length
+        } total orders with $${totalRevenue.toFixed(2)} in revenue. Today: ${
+          todayOrders.length
+        } orders totaling $${todayRevenue.toFixed(2)}.`;
       }
 
       if (message.includes("popular") || message.includes("menu")) {
         const itemCounts = new Map<string, number>();
         orders.forEach((order) => {
           order.items.forEach((item) => {
-            itemCounts.set(item.name, (itemCounts.get(item.name) || 0) + item.quantity);
+            itemCounts.set(
+              item.name,
+              (itemCounts.get(item.name) || 0) + item.quantity
+            );
           });
         });
 
@@ -481,13 +547,10 @@ const AIInsightsChat = () => {
       }
 
       if (message.includes("status") || message.includes("orders")) {
-        const statusCounts = orders.reduce(
-          (acc, order) => {
-            acc[order.status] = (acc[order.status] || 0) + 1;
-            return acc;
-          },
-          {} as Record<string, number>
-        );
+        const statusCounts = orders.reduce((acc, order) => {
+          acc[order.status] = (acc[order.status] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
 
         const statusSummary = Object.entries(statusCounts)
           .map(([status, count]) => `${count} ${status}`)
@@ -496,7 +559,7 @@ const AIInsightsChat = () => {
         return `Current order status: ${statusSummary}.`;
       }
 
-      return "Ask me about sales, popular items, order status, or tables. I’ll automatically pull the data for you.";
+      return "Ask me about the menu, food ratings, nutrition info, or what you'd recommend. I can also help with sales, popular items, order status, or tables if you're staff.";
     } catch (error) {
       console.error("Error generating AI response:", error);
       return "I'm having trouble accessing your data right now. Please check your database connection.";
@@ -562,7 +625,7 @@ const AIInsightsChat = () => {
     const scrollToBottom = () => {
       if (scrollAreaRef.current) {
         const scrollElement = scrollAreaRef.current.querySelector(
-          "[data-radix-scroll-area-viewport]",
+          "[data-radix-scroll-area-viewport]"
         ) as HTMLElement | null;
         if (scrollElement) {
           scrollElement.scrollTo({
@@ -592,7 +655,7 @@ const AIInsightsChat = () => {
                 key={message.id}
                 className={cn(
                   "flex gap-3",
-                  message.sender === "user" ? "justify-end" : "justify-start",
+                  message.sender === "user" ? "justify-end" : "justify-start"
                 )}
               >
                 <div
@@ -600,10 +663,12 @@ const AIInsightsChat = () => {
                     "max-w-[80%] rounded-xl px-4 py-2 text-sm leading-relaxed",
                     message.sender === "user"
                       ? "bg-gray-900 text-white ml-auto"
-                      : "bg-gray-100 text-gray-900",
+                      : "bg-gray-100 text-gray-900"
                   )}
                 >
-                  <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                  <p className="whitespace-pre-wrap break-words">
+                    {message.content}
+                  </p>
                   <p className="text-[10px] opacity-70 mt-1">
                     {message.timestamp.toLocaleTimeString([], {
                       hour: "2-digit",
@@ -623,8 +688,14 @@ const AIInsightsChat = () => {
                 <div className="bg-gray-100 rounded-xl px-4 py-2 text-sm">
                   <div className="flex items-center gap-1">
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.1s" }}
+                    />
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    />
                   </div>
                 </div>
               </div>
@@ -634,17 +705,16 @@ const AIInsightsChat = () => {
         <div className="border-t p-4 flex-shrink-0">
           <div className="flex gap-2">
             <Input
-              ref={inputRef}
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Ask about the menu, sales, orders..."
-              disabled={isLoading}
+              onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+              placeholder="Ask me anything about our menu - I'm powered by AI and know everything about our food!"
               className="flex-1"
+              disabled={isLoading}
             />
             <Button
               onClick={handleSendMessage}
-              disabled={!inputMessage.trim() || isLoading}
+              disabled={isLoading || !inputMessage.trim()}
               size="icon"
               className="bg-gray-900 hover:bg-black"
             >
