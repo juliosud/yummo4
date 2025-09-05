@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Clock } from "lucide-react";
+import { AlertCircle, Clock, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   checkSessionActive,
   getSessionCodeFromUrl,
   getTableIdFromUrl,
+  clearSessionData,
 } from "@/lib/session-utils";
 
 interface SessionGuardProps {
@@ -20,11 +22,16 @@ const SessionGuard: React.FC<SessionGuardProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [sessionCode, setSessionCode] = useState<string | null>(null);
   const [tableId, setTableId] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastError, setLastError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const checkSession = async () => {
+  const checkSession = async (isRetry = false) => {
+    if (!isRetry) {
       setIsLoading(true);
+      setLastError(null);
+    }
 
+    try {
       const urlSessionCode = getSessionCodeFromUrl();
       const urlTableId = getTableIdFromUrl();
 
@@ -32,29 +39,57 @@ const SessionGuard: React.FC<SessionGuardProps> = ({
       setTableId(urlTableId);
 
       if (!urlSessionCode) {
-        console.log("❌ No session code found in URL");
+        console.log("❌ No session code found in URL or storage");
         setIsSessionActive(false);
         setIsLoading(false);
         return;
       }
 
+      console.log("📱 Checking session:", urlSessionCode);
       const isActive = await checkSessionActive(urlSessionCode);
       setIsSessionActive(isActive);
+      setRetryCount(0); // Reset retry count on success
+      setLastError(null);
+    } catch (error) {
+      console.error("❌ Session check failed:", error);
+      setLastError(error instanceof Error ? error.message : "Unknown error");
+      setIsSessionActive(false);
+    } finally {
       setIsLoading(false);
-    };
+    }
+  };
 
+  const handleRetry = async () => {
+    setRetryCount((prev) => prev + 1);
+    await checkSession(true);
+  };
+
+  const handleClearSession = () => {
+    clearSessionData();
+    setSessionCode(null);
+    setTableId(null);
+    setIsSessionActive(false);
+    // Reload page to start fresh
+    window.location.reload();
+  };
+
+  useEffect(() => {
     checkSession();
 
-    // Check session status every 30 seconds
-    const interval = setInterval(checkSession, 30000);
+    // Check session status every 30 seconds, but less frequently on mobile to save battery
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      );
+    const interval = setInterval(checkSession, isMobile ? 60000 : 30000); // 60s on mobile, 30s on desktop
 
     return () => clearInterval(interval);
   }, []);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Card className="w-full max-w-md mx-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Clock className="h-12 w-12 text-blue-500 animate-spin mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
@@ -63,6 +98,11 @@ const SessionGuard: React.FC<SessionGuardProps> = ({
             <p className="text-gray-600 text-center">
               Please wait while we verify your table session...
             </p>
+            {retryCount > 0 && (
+              <p className="text-sm text-gray-500 mt-2">
+                Retry attempt {retryCount}
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -75,22 +115,28 @@ const SessionGuard: React.FC<SessionGuardProps> = ({
     }
 
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Card className="w-full max-w-md mx-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertCircle className="h-8 w-8 text-red-600" />
             </div>
             <CardTitle className="text-xl font-semibold text-gray-900">
-              Session Expired
+              Session Issue
             </CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-gray-600">
               {!sessionCode
                 ? "No valid session found. Please scan the QR code at your table to access the menu."
-                : "Your table session has ended. Please ask restaurant staff to start a new session."}
+                : "Your table session has ended or there's a connection issue. Please try refreshing or ask restaurant staff for help."}
             </p>
+
+            {lastError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm text-red-700">Error: {lastError}</p>
+              </div>
+            )}
 
             {tableId && (
               <div className="bg-gray-50 rounded-lg p-4">
@@ -105,8 +151,36 @@ const SessionGuard: React.FC<SessionGuardProps> = ({
               </div>
             )}
 
-            <div className="text-xs text-gray-500 mt-2">
-              Need help? Ask your server to start a new session for your table.
+            <div className="flex flex-col gap-2">
+              {sessionCode && retryCount < 3 && (
+                <Button
+                  onClick={handleRetry}
+                  variant="outline"
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Retry Connection
+                </Button>
+              )}
+
+              <Button
+                onClick={handleClearSession}
+                variant="outline"
+                className="w-full"
+              >
+                Clear Session & Restart
+              </Button>
+            </div>
+
+            <div className="text-xs text-gray-500 mt-4 space-y-1">
+              <p>
+                Need help? Ask your server to start a new session for your
+                table.
+              </p>
+              <p className="text-xs">
+                📱 Mobile tip: Keep this tab open to maintain your session.
+              </p>
             </div>
           </CardContent>
         </Card>

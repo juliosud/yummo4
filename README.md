@@ -1,30 +1,94 @@
-# React + TypeScript + Vite
+# Yummo4 - Restaurant Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern restaurant management system built with React, TypeScript, and Supabase. Features include QR code ordering, real-time order management, AI-powered menu insights, and customer analytics.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 🍽️ **QR Code Ordering** - Customers scan QR codes to access digital menus
+- 📱 **Mobile-First Design** - Optimized for both customers and staff
+- 🤖 **AI Menu Analysis** - Intelligent recommendations and nutritional insights
+- 📊 **Real-time Analytics** - Order tracking and customer insights
+- 🏪 **Multi-tenant** - Support for multiple restaurants
+- 💳 **Cart Management** - Session-based shopping cart
+- 📋 **Order Management** - Kitchen dashboard for order processing
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+- **Frontend**: React 18, TypeScript, Vite
+- **UI**: Tailwind CSS, Radix UI, Framer Motion
+- **Backend**: Supabase (PostgreSQL, Auth, Edge Functions)
+- **Deployment**: Vercel
 
-- Configure the top-level `parserOptions` property like this:
+## Quick Start
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
+### Prerequisites
+- Node.js 18+
+- Supabase account
+- Vercel account (for deployment)
+
+### Local Development
+
+1. **Clone and install dependencies**
+   ```bash
+   git clone <your-repo>
+   cd yummo4
+   npm install
+   ```
+
+2. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your Supabase credentials
+   ```
+
+3. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+### Production Deployment to Vercel
+
+1. **Push to GitHub**
+   ```bash
+   git add .
+   git commit -m "Initial commit"
+   git push origin main
+   ```
+
+2. **Deploy to Vercel**
+   - Connect your GitHub repo to Vercel
+   - Set environment variables in Vercel dashboard
+   - Deploy automatically on push
+
+## Environment Variables
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+## Database Setup
+
+Run the SQL files in `src/lib/` in your Supabase SQL editor:
+1. `database-setup.sql` - Core tables and functions
+2. `customer-setup-clean.sql` - Customer management
+3. `multi-tenancy-setup.sql` - Restaurant isolation
+
+## Project Structure
+
+```
+src/
+├── components/          # React components
+├── contexts/           # React contexts for state management
+├── hooks/              # Custom React hooks
+├── lib/                # Utilities and database setup
+├── pages/              # Page components
+└── supabase/           # Supabase edge functions
+```
+
+## Key Components
+
+- **CustomerMenu** - QR code menu interface
+- **AdminOrderContext** - Order management for staff
+- **AIInsightsChat** - AI-powered menu recommendations
+- **SessionGuard** - Session validation and routing
