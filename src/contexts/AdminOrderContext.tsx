@@ -175,12 +175,8 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
   const updateOrderStatus = async (
     orderId: string,
     status: Order["status"]
-    status: Order["status"]
   ) => {
     try {
-      console.log(
-        `🔄 AdminOrderContext: Updating order ${orderId} status to ${status}`
-      );
       console.log(
         `🔄 AdminOrderContext: Updating order ${orderId} status to ${status}`
       );
@@ -188,8 +184,6 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
       // Optimistic update - update UI immediately
       setOrders((prev) =>
         prev.map((order) =>
-          order.id === orderId ? { ...order, status } : order
-        )
           order.id === orderId ? { ...order, status } : order
         )
       );
@@ -228,9 +222,6 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
     console.log(
       "🔔 AdminOrderContext: Setting up real-time subscription for ALL orders"
     );
-    console.log(
-      "🔔 AdminOrderContext: Setting up real-time subscription for ALL orders"
-    );
 
     const subscription = supabase
       .channel("admin_orders_realtime")
@@ -241,7 +232,6 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
           console.log("🔔 Real-time order update received:", payload);
           fetchOrders();
         }
-        }
       )
       .on(
         "postgres_changes",
@@ -249,7 +239,6 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
         (payload) => {
           console.log("🔔 Real-time order items update received:", payload);
           fetchOrders();
-        }
         }
       )
       .subscribe();
