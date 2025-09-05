@@ -562,6 +562,7 @@ interface OrderItem {
   price: number;
   quantity: number;
   image: string;
+  comments?: string;
 }
 
 interface Order {
@@ -618,6 +619,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
         image:
           item.menu_item?.image ||
           "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80",
+        comments: item.comments || "",
       })) || [];
 
     return {
@@ -716,6 +718,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
             quantity,
             price,
             item_name,
+            comments,
             menu_item:menu_items (
               id,
               name,

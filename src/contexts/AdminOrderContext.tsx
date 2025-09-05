@@ -13,6 +13,7 @@ interface OrderItem {
   price: number;
   quantity: number;
   image: string;
+  comments?: string;
 }
 
 interface Order {
@@ -105,6 +106,7 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
             quantity,
             price,
             item_name,
+            comments,
             menu_item:menu_items (
               id,
               name,
