@@ -17,11 +17,10 @@ export const checkSessionActive = async (
     }
 
     const { data, error } = await supabase
-      .from("table_sessions")
+      .from("customers")
       .select("*")
       .eq("session_code", sessionCode)
-      .eq("is_active", true)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("❌ Session check error:", error);
@@ -54,10 +53,10 @@ export const getSessionDetails = async (sessionCode: string) => {
     }
 
     const { data, error } = await supabase
-      .from("table_sessions")
+      .from("customers")
       .select("*")
       .eq("session_code", sessionCode)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("❌ Get session details error:", error);

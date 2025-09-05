@@ -13,7 +13,15 @@ const createMockClient = () => {
   console.warn("   3. Run the SQL setup from src/lib/database-setup.sql");
   return {
     from: (table: string) => ({
-      select: (columns?: string) => Promise.resolve({ data: [], error: null }),
+      select: (columns?: string) => ({
+        eq: (column: string, value: any) => ({
+          maybeSingle: () => Promise.resolve({ data: null, error: null }),
+          single: () => Promise.resolve({ data: null, error: null }),
+        }),
+        order: (column: string, options?: any) => Promise.resolve({ data: [], error: null }),
+        single: () => Promise.resolve({ data: null, error: null }),
+        maybeSingle: () => Promise.resolve({ data: null, error: null }),
+      }),
       insert: (data: any) => Promise.resolve({ data: null, error: null }),
       update: (data: any) => ({
         eq: (column: string, value: any) =>
@@ -23,15 +31,11 @@ const createMockClient = () => {
         eq: (column: string, value: any) =>
           Promise.resolve({ data: null, error: null }),
       }),
-      eq: (column: string, value: any) => ({
-        select: (columns?: string) =>
-          Promise.resolve({ data: [], error: null }),
-        single: () => Promise.resolve({ data: null, error: null }),
-      }),
-      order: (column: string, options?: any) =>
-        Promise.resolve({ data: [], error: null }),
-      single: () => Promise.resolve({ data: null, error: null }),
     }),
+    rpc: (fn: string, params?: any) => Promise.resolve({ data: null, error: null }),
+    functions: {
+      invoke: (fn: string, options?: any) => Promise.resolve({ data: null, error: null }),
+    },
     channel: (name: string) => ({
       on: (event: string, config: any, callback: Function) => ({
         subscribe: () => ({ unsubscribe: () => {} }),

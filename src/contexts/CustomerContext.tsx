@@ -37,9 +37,10 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
       setLoading(true);
       setError(null);
 
-      const { data, error: rpcError } = await supabase.rpc('get_customer_by_session', {
-        p_session_code: sessionCode,
-      });
+      const { data, error: rpcError } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('session_code', sessionCode);
 
       if (rpcError) {
         console.error('Error fetching customer by session:', rpcError);
@@ -69,9 +70,10 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
       setLoading(true);
       setError(null);
 
-      const { data, error: rpcError } = await supabase.rpc('get_customer_by_phone', {
-        p_phone: phone,
-      });
+      const { data, error: rpcError } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('phone', phone);
 
       if (rpcError) {
         console.error('Error fetching customer by phone:', rpcError);

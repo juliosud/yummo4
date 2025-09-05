@@ -143,12 +143,10 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
         (data || []).map(async (order) => {
           if (order.session_code) {
             try {
-              const { data: customerData } = await supabase.rpc(
-                "get_customer_by_session",
-                {
-                  p_session_code: order.session_code,
-                }
-              );
+              const { data: customerData } = await supabase
+                .from('customers')
+                .select('*')
+                .eq('session_code', order.session_code);
               return convertDBOrderToOrder(order, customerData);
             } catch (error) {
               console.warn(
