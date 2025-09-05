@@ -32,6 +32,11 @@ interface MenuItem {
   prepTime: number;
   rating: number;
   available: boolean;
+  // Additional nutritional info
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
 }
 
 interface CartItem extends MenuItem {
@@ -52,6 +57,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 20,
     rating: 4.8,
     available: true,
+    calories: 320,
+    protein: 8,
+    carbs: 65,
+    fat: 4,
   },
   {
     id: "3",
@@ -64,6 +73,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 10,
     rating: 4.7,
     available: true,
+    calories: 420,
+    protein: 18,
+    carbs: 35,
+    fat: 22,
   },
   {
     id: "4",
@@ -76,6 +89,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 20,
     rating: 4.9,
     available: true,
+    calories: 380,
+    protein: 12,
+    carbs: 58,
+    fat: 14,
   },
   {
     id: "9",
@@ -89,6 +106,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 8,
     rating: 4.6,
     available: true,
+    calories: 290,
+    protein: 14,
+    carbs: 28,
+    fat: 18,
   },
   {
     id: "10",
@@ -101,6 +122,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 15,
     rating: 4.8,
     available: true,
+    calories: 450,
+    protein: 16,
+    carbs: 52,
+    fat: 20,
   },
   {
     id: "11",
@@ -114,6 +139,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 12,
     rating: 4.5,
     available: true,
+    calories: 520,
+    protein: 24,
+    carbs: 42,
+    fat: 28,
   },
 
   // Lunch Items
@@ -128,6 +157,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 30,
     rating: 5.0,
     available: true,
+    calories: 480,
+    protein: 35,
+    carbs: 12,
+    fat: 32,
   },
   {
     id: "5",
@@ -140,6 +173,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 15,
     rating: 4.6,
     available: true,
+    calories: 280,
+    protein: 28,
+    carbs: 15,
+    fat: 12,
   },
   {
     id: "12",
@@ -153,6 +190,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 18,
     rating: 4.7,
     available: true,
+    calories: 420,
+    protein: 32,
+    carbs: 38,
+    fat: 16,
   },
   {
     id: "13",
@@ -166,6 +207,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 10,
     rating: 4.4,
     available: true,
+    calories: 220,
+    protein: 8,
+    carbs: 18,
+    fat: 14,
   },
   {
     id: "14",
@@ -179,6 +224,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 20,
     rating: 4.8,
     available: true,
+    calories: 380,
+    protein: 26,
+    carbs: 42,
+    fat: 14,
   },
   {
     id: "15",
@@ -192,6 +241,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 25,
     rating: 4.9,
     available: true,
+    calories: 580,
+    protein: 36,
+    carbs: 45,
+    fat: 32,
   },
   {
     id: "16",
@@ -204,6 +257,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 22,
     rating: 4.7,
     available: true,
+    calories: 520,
+    protein: 22,
+    carbs: 58,
+    fat: 24,
   },
   {
     id: "17",
@@ -216,6 +273,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 35,
     rating: 4.6,
     available: true,
+    calories: 480,
+    protein: 20,
+    carbs: 62,
+    fat: 18,
   },
 
   // Dinner Items
@@ -231,6 +292,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 25,
     rating: 4.8,
     available: true,
+    calories: 420,
+    protein: 38,
+    carbs: 8,
+    fat: 26,
   },
   {
     id: "19",
@@ -243,6 +308,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 40,
     rating: 4.9,
     available: true,
+    calories: 680,
+    protein: 52,
+    carbs: 28,
+    fat: 42,
   },
   {
     id: "20",
@@ -255,6 +324,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 35,
     rating: 4.7,
     available: true,
+    calories: 520,
+    protein: 28,
+    carbs: 58,
+    fat: 18,
   },
   {
     id: "21",
@@ -268,6 +341,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 30,
     rating: 4.8,
     available: true,
+    calories: 580,
+    protein: 42,
+    carbs: 18,
+    fat: 38,
   },
 
   // Desserts
@@ -282,6 +359,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 10,
     rating: 4.9,
     available: true,
+    calories: 380,
+    protein: 6,
+    carbs: 52,
+    fat: 18,
   },
   {
     id: "22",
@@ -295,6 +376,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 5,
     rating: 4.8,
     available: true,
+    calories: 320,
+    protein: 8,
+    carbs: 38,
+    fat: 16,
   },
   {
     id: "23",
@@ -307,6 +392,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 8,
     rating: 4.7,
     available: true,
+    calories: 280,
+    protein: 6,
+    carbs: 32,
+    fat: 14,
   },
   {
     id: "24",
@@ -319,6 +408,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 5,
     rating: 4.6,
     available: true,
+    calories: 420,
+    protein: 10,
+    carbs: 42,
+    fat: 24,
   },
   {
     id: "25",
@@ -332,6 +425,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 3,
     rating: 4.5,
     available: true,
+    calories: 320,
+    protein: 6,
+    carbs: 48,
+    fat: 12,
   },
 
   // Drinks
@@ -346,6 +443,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 5,
     rating: 4.7,
     available: true,
+    calories: 180,
+    protein: 4,
+    carbs: 42,
+    fat: 2,
   },
   {
     id: "26",
@@ -358,6 +459,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 2,
     rating: 4.4,
     available: true,
+    calories: 180,
+    protein: 2,
+    carbs: 14,
+    fat: 0,
   },
   {
     id: "27",
@@ -370,6 +475,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 2,
     rating: 4.3,
     available: true,
+    calories: 125,
+    protein: 0,
+    carbs: 4,
+    fat: 0,
   },
   {
     id: "28",
@@ -382,6 +491,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 3,
     rating: 4.6,
     available: true,
+    calories: 110,
+    protein: 2,
+    carbs: 26,
+    fat: 0,
   },
   {
     id: "29",
@@ -394,6 +507,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 2,
     rating: 4.8,
     available: true,
+    calories: 5,
+    protein: 0,
+    carbs: 1,
+    fat: 0,
   },
   {
     id: "30",
@@ -406,6 +523,10 @@ const staticMenuItems: MenuItem[] = [
     prepTime: 3,
     rating: 4.2,
     available: true,
+    calories: 70,
+    protein: 0,
+    carbs: 18,
+    fat: 0,
   },
 ];
 

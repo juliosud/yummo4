@@ -85,7 +85,7 @@ export const executeRawQuery = async (query: string) => {
 
     console.log(
       "✅ SQL query successful, rows returned:",
-      processedData?.length || 0,
+      processedData?.length || 0
     );
     return { data: processedData, error: null };
   } catch (error) {

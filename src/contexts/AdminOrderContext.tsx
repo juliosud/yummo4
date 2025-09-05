@@ -35,12 +35,14 @@ interface AdminOrderContextType {
   loading: boolean;
   updateOrderStatus: (
     orderId: string,
-    status: Order["status"],
+    status: Order["status"]
   ) => Promise<void>;
   refreshOrders: () => Promise<void>;
 }
 
-const AdminOrderContext = createContext<AdminOrderContextType | undefined>(undefined);
+const AdminOrderContext = createContext<AdminOrderContextType | undefined>(
+  undefined
+);
 
 export const useAdminOrders = () => {
   const context = useContext(AdminOrderContext);
@@ -71,7 +73,7 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
       })) || [];
 
     const isTerminalOrder = customerData && customerData.length > 0;
-    
+
     return {
       id: dbOrder.id,
       items,
@@ -81,8 +83,12 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
       tableNumber: dbOrder.table_number,
       sessionCode: dbOrder.session_code,
       estimatedMinutes: dbOrder.estimated_minutes,
-      customerName: isTerminalOrder ? customerData[0].name : dbOrder.customer_name,
-      customerPhone: isTerminalOrder ? customerData[0].phone : dbOrder.customer_phone,
+      customerName: isTerminalOrder
+        ? customerData[0].name
+        : dbOrder.customer_name,
+      customerPhone: isTerminalOrder
+        ? customerData[0].phone
+        : dbOrder.customer_phone,
       isTerminalOrder,
     };
   };
@@ -113,7 +119,7 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
               image
             )
           )
-        `,
+        `
         )
         .order("created_at", { ascending: false });
 
@@ -124,27 +130,35 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
       }
 
       console.log(
-        `✅ AdminOrderContext: Successfully fetched ${data?.length || 0} orders from database`,
+        `✅ AdminOrderContext: Successfully fetched ${
+          data?.length || 0
+        } orders from database`
       );
-      
+
       // Get customer data for orders with session codes
       const ordersWithCustomerData = await Promise.all(
         (data || []).map(async (order) => {
           if (order.session_code) {
             try {
-              const { data: customerData } = await supabase.rpc('get_customer_by_session', {
-                p_session_code: order.session_code,
-              });
+              const { data: customerData } = await supabase.rpc(
+                "get_customer_by_session",
+                {
+                  p_session_code: order.session_code,
+                }
+              );
               return convertDBOrderToOrder(order, customerData);
             } catch (error) {
-              console.warn(`Could not fetch customer data for session ${order.session_code}:`, error);
+              console.warn(
+                `Could not fetch customer data for session ${order.session_code}:`,
+                error
+              );
               return convertDBOrderToOrder(order);
             }
           }
           return convertDBOrderToOrder(order);
         })
       );
-      
+
       setOrders(ordersWithCustomerData);
     } catch (error) {
       console.error("Error fetching orders:", error);
@@ -157,16 +171,18 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
   // Update order status in database
   const updateOrderStatus = async (
     orderId: string,
-    status: Order["status"],
+    status: Order["status"]
   ) => {
     try {
-      console.log(`🔄 AdminOrderContext: Updating order ${orderId} status to ${status}`);
+      console.log(
+        `🔄 AdminOrderContext: Updating order ${orderId} status to ${status}`
+      );
 
       // Optimistic update - update UI immediately
       setOrders((prev) =>
         prev.map((order) =>
-          order.id === orderId ? { ...order, status } : order,
-        ),
+          order.id === orderId ? { ...order, status } : order
+        )
       );
 
       const { error } = await supabase
@@ -200,7 +216,9 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
 
   // Set up real-time subscription for ALL orders
   useEffect(() => {
-    console.log("🔔 AdminOrderContext: Setting up real-time subscription for ALL orders");
+    console.log(
+      "🔔 AdminOrderContext: Setting up real-time subscription for ALL orders"
+    );
 
     const subscription = supabase
       .channel("admin_orders_realtime")
@@ -210,7 +228,7 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
         (payload) => {
           console.log("🔔 Real-time order update received:", payload);
           fetchOrders();
-        },
+        }
       )
       .on(
         "postgres_changes",
@@ -218,7 +236,7 @@ export const AdminOrderProvider: React.FC<{ children: ReactNode }> = ({
         (payload) => {
           console.log("🔔 Real-time order items update received:", payload);
           fetchOrders();
-        },
+        }
       )
       .subscribe();
 
