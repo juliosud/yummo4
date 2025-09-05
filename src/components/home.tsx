@@ -90,7 +90,7 @@ const TableManagement = () => {
         let terminalCount = 1;
         while (
           existingTableIds.includes(
-            `T-${terminalCount.toString().padStart(2, "0")}`,
+            `T-${terminalCount.toString().padStart(2, "0")}`
           )
         ) {
           terminalCount++;
@@ -232,7 +232,7 @@ const TableManagement = () => {
         const basePath = import.meta.env.VITE_BASE_PATH || "";
         const terminalUrl = new URL(
           `${basePath ? `${basePath}` : ""}/term/${table.table_id}`,
-          baseUrl,
+          baseUrl
         ).toString();
 
         // Generate a QR for the static terminal URL
@@ -255,7 +255,9 @@ const TableManagement = () => {
       }
 
       // Generate unique session code for regular tables
-      const sessionCode = `${table.table_id}-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+      const sessionCode = `${table.table_id}-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2, 15)}`;
 
       // Generate the menu URL with proper base path handling
       const baseUrl = window.location.origin;
@@ -270,7 +272,7 @@ const TableManagement = () => {
       console.log("🔗 Current location:", window.location.href);
       console.log(
         "🔗 Environment:",
-        import.meta.env.DEV ? "development" : "production",
+        import.meta.env.DEV ? "development" : "production"
       );
 
       // Generate QR code
@@ -355,7 +357,7 @@ const TableManagement = () => {
           if (error) {
             console.error(
               "❌ Failed to end terminal sessions in database:",
-              error,
+              error
             );
             alert(`Failed to end terminal session: ${error.message}`);
             return;
@@ -364,7 +366,7 @@ const TableManagement = () => {
               "✅ All terminal sessions ended in database for table:",
               table.table_id,
               "Updated records:",
-              data?.length || 0,
+              data?.length || 0
             );
           }
         } else {
@@ -388,7 +390,7 @@ const TableManagement = () => {
               "✅ Session ended in database for table:",
               table.table_id,
               "Updated records:",
-              data?.length || 0,
+              data?.length || 0
             );
           }
         }
@@ -435,7 +437,7 @@ const TableManagement = () => {
 
   const getStatusColor = (
     sessionActive: boolean,
-    tableType: "regular" | "terminal",
+    tableType: "regular" | "terminal"
   ) => {
     if (sessionActive) {
       return "bg-blue-50 border-blue-400 text-blue-700 border-2";
@@ -493,7 +495,7 @@ const TableManagement = () => {
               className={cn(
                 "relative w-20 h-20 border-2 rounded-xl flex flex-col items-center justify-center transition-all shadow-md hover:scale-105",
                 getStatusColor(table.sessionActive, table.table_type),
-                table.table_type === "terminal" && "ring-2 ring-purple-200",
+                table.table_type === "terminal" && "ring-2 ring-purple-200"
               )}
             >
               <button
@@ -649,7 +651,9 @@ const TableManagement = () => {
                 <Button
                   onClick={() => {
                     const link = document.createElement("a");
-                    link.download = `qr-code-${selectedTable.name.toLowerCase().replace(/\s+/g, "-")}.png`;
+                    link.download = `qr-code-${selectedTable.name
+                      .toLowerCase()
+                      .replace(/\s+/g, "-")}.png`;
                     link.href = selectedTable.qrCode;
                     link.click();
                   }}
@@ -760,7 +764,7 @@ const Home = () => {
                   "flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all",
                   activeTab === item.id
                     ? "bg-yellow-100 text-yellow-800"
-                    : "text-gray-500 hover:text-gray-700",
+                    : "text-gray-500 hover:text-gray-700"
                 )}
               >
                 <Icon className="h-5 w-5" />
@@ -776,7 +780,11 @@ const Home = () => {
         {/* Logo */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-center">
-            <span className="font-bold text-xl">yummo.ai</span>
+            <img
+              src="/swifttable.png"
+              alt="SwiftTable"
+              className="h-32 w-full object-contain"
+            />
           </div>
         </div>
 
@@ -793,7 +801,7 @@ const Home = () => {
                       "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors",
                       activeTab === item.id
                         ? "bg-yellow-100 text-yellow-800 font-medium"
-                        : "text-gray-600 hover:bg-gray-100",
+                        : "text-gray-600 hover:bg-gray-100"
                     )}
                   >
                     <Icon className="h-5 w-5" />

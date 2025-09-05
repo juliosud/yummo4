@@ -100,7 +100,7 @@ const AuthPage = () => {
         setError(error.message);
       } else {
         setSuccess(
-          "Account created successfully! Please check your email to verify your account.",
+          "Account created successfully! Please check your email to verify your account."
         );
         // Reset form
         setSignupData({
@@ -136,12 +136,14 @@ const AuthPage = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-xl mr-3">
               <QrCode className="w-7 h-7 text-white" />
             </div>
-            <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              yummo.ai
-            </span>
+            <img
+              src="/swifttable.png"
+              alt="SwiftTable"
+              className="h-32 w-full object-contain"
+            />
           </div>
           <p className="text-gray-600">
             Welcome to the future of restaurant management

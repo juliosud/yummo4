@@ -1,10 +1,11 @@
 # Multi-Tenancy Migration Guide
 
-This guide explains how to migrate your existing Yummo application to support multiple restaurants with complete data isolation.
+This guide explains how to migrate your existing SwiftTable application to support multiple restaurants with complete data isolation.
 
 ## 🏗️ Architecture Overview
 
 The new multi-tenancy system adds:
+
 - **Restaurant entities** - Each restaurant is a separate tenant
 - **Restaurant isolation** - All data is filtered by `restaurant_id`
 - **Row Level Security (RLS)** - Database-level data isolation
@@ -33,7 +34,7 @@ After running the setup script, migrate your existing data to a default restaura
 ```sql
 -- Replace with your actual restaurant details
 SELECT migrate_existing_data_to_restaurant(
-  'Your Restaurant Name', 
+  'Your Restaurant Name',
   'your-restaurant-slug'
 );
 ```
@@ -41,6 +42,7 @@ SELECT migrate_existing_data_to_restaurant(
 ### 3. Frontend Updates
 
 The frontend has been updated with:
+
 - **RestaurantContext** - Manages restaurant data
 - **RestaurantSetup** - Component for new restaurant creation
 - **RestaurantGuard** - Ensures users have a restaurant
@@ -57,13 +59,16 @@ The frontend has been updated with:
 ### Database Schema
 
 **New Tables:**
+
 - `restaurants` - Restaurant entities with settings and metadata
 
 **Updated Tables:**
+
 - All tables now have `restaurant_id` foreign key
 - RLS policies ensure data isolation
 
 **New Functions:**
+
 - `get_current_restaurant_id()` - Get user's restaurant ID
 - `create_restaurant_for_user()` - Create restaurant for new user
 - `get_current_restaurant()` - Get complete restaurant data
@@ -72,13 +77,16 @@ The frontend has been updated with:
 ### Frontend Changes
 
 **New Contexts:**
+
 - `RestaurantContext` - Manages restaurant state and operations
 
 **New Components:**
+
 - `RestaurantSetup` - Restaurant creation form
 - `RestaurantGuard` - Ensures restaurant exists
 
 **Updated Components:**
+
 - `App.tsx` - Includes RestaurantProvider and RestaurantGuard
 - All contexts now filter by restaurant_id (automatic via RLS)
 
@@ -98,6 +106,7 @@ The frontend has been updated with:
 ## 📊 Data Isolation
 
 Each restaurant will only see:
+
 - Their own menu items
 - Their own tables
 - Their own orders
@@ -150,6 +159,7 @@ If you need to rollback:
 ## 🎯 Next Steps
 
 After migration:
+
 1. **Test thoroughly** with multiple user accounts
 2. **Update documentation** for your team
 3. **Consider restaurant settings** (themes, branding, etc.)
@@ -158,9 +168,10 @@ After migration:
 ## 📞 Support
 
 If you encounter issues during migration:
+
 1. Check the Supabase logs for RLS policy violations
 2. Verify that all foreign key constraints are satisfied
 3. Ensure the migration script ran completely
 4. Test with a fresh user account to verify the flow
 
-The multi-tenancy system provides a solid foundation for scaling your restaurant management platform!
+The multi-tenancy system provides a solid foundation for scaling your SwiftTable restaurant management platform!

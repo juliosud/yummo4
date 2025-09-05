@@ -27,12 +27,14 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
                 <QrCode className="w-5 h-5 text-white" />
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                yummo.ai
-              </span>
+              <img
+                src="/swifttable.png"
+                alt="SwiftTable"
+                className="h-20 w-full object-contain"
+              />
             </div>
             <Button
               onClick={handleLoginClick}
@@ -198,7 +200,7 @@ const LandingPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-                Why Choose yummo.ai?
+                Why Choose SwiftTable?
               </h2>
               <div className="space-y-6">
                 <div className="flex items-start space-x-4">
@@ -269,7 +271,7 @@ const LandingPage = () => {
                     Ready to Get Started?
                   </h3>
                   <p className="text-blue-100 mb-6">
-                    Join hundreds of restaurants already using yummo.ai to
+                    Join hundreds of restaurants already using SwiftTable to
                     transform their dining experience.
                   </p>
                   <Button
@@ -289,13 +291,15 @@ const LandingPage = () => {
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className="flex items-center space-x-2 mb-6">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-400 rounded-xl flex items-center justify-center">
                 <QrCode className="w-5 h-5 text-white" />
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                yummo.ai
-              </span>
+              <img
+                src="/swifttable.png"
+                alt="SwiftTable"
+                className="h-20 w-full object-contain"
+              />
             </div>
             <p className="text-gray-400 mb-6">
               Transforming restaurants with smart QR menu technology
@@ -312,7 +316,7 @@ const LandingPage = () => {
               </a>
             </div>
             <div className="mt-8 pt-8 border-t border-gray-800 text-gray-400 text-sm">
-              © 2024 yummo.ai. All rights reserved.
+              &copy; 2024 SwiftTable. All rights reserved.
             </div>
           </div>
         </div>
